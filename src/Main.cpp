@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
     bool t_log_to_console = false;
-    int port = 8080;
+    unsigned short int port = 80;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
             if (i + 1 < argc) {
                 try {
                     port = std::stoi(argv[++i]);
-                    if (port <= 0 || port > 65535) {
+                    if (port <= 0 || port >= 65534) {
                         proxyServer::Logger::log("Port must be between 1 and 65535", proxyServer::Logger::LogType::ERROR);
                         return 1;
                     }
@@ -43,8 +43,9 @@ int main(int argc, char *argv[]) {
     }
 
     proxyServer::Logger::initialise(t_log_to_console);
-    proxyServer::Logger::log("Initialising Server on port...", proxyServer::Logger::LogType::LOG);
+    proxyServer::Logger::log("Initialising Server on port \"" + std::to_string(port) + "\"...", proxyServer::Logger::LogType::LOG);
 
-    proxyServer::Server server = proxyServer::Server();
+    proxyServer::Server server = proxyServer::Server(port);
+    server.startServer();
     return 0;
 }

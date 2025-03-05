@@ -7,7 +7,7 @@ BIN_DIR = bin
 PROGRAM_LOG_DIR = $(BIN_DIR)/logs
 TARGET = $(BIN_DIR)/main
 
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+SRCS = $(shell find $(SRC_DIR) -name '*.cpp')
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
 
 all: $(TARGET)
@@ -28,4 +28,4 @@ clean:
 run: all
 	./$(TARGET)
 
-.PHONY: all clean run
+.PHONY: clean all run
