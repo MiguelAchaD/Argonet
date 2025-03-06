@@ -6,7 +6,7 @@
 #include <mutex>
 
 namespace proxyServer {
-    class Logger {
+class Logger {
     public:
         enum class LogType {
             LOG,
@@ -22,5 +22,5 @@ namespace proxyServer {
         static bool m_log_to_console;
         static std::ofstream m_log_file;
         static std::mutex m_mtx;
-    };
+};
 }

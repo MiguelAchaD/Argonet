@@ -3,10 +3,10 @@
 #include <string>
 
 namespace proxyServer {
-    class Command {
+class Command {
     public:
         static std::string getCurrentTimestamp();
         static std::string getCurrentDir();
         static std::string getActiveInterfaceIP();
-    };
+};
 }
