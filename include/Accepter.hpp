@@ -3,7 +3,7 @@
 #include <string>
 
 namespace proxyServer {
-    class Accepter {
+class Accepter {
     private:
         std::string translateContents();
         void accept();
@@ -13,5 +13,5 @@ namespace proxyServer {
     public:
         Accepter();
         ~Accepter();
-    };
+};
 }
