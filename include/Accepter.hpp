@@ -5,7 +5,7 @@
 #include <string>
 
 namespace proxyServer {
-    class Accepter {
+class Accepter {
     private:
         proxyServer::petitionPacket parseContents(std::string t_result);
         std::string readContents(int t_client_socket);
@@ -13,5 +13,5 @@ namespace proxyServer {
         proxyServer::petitionPacket examineContents(int t_client_socket);
         Accepter();
         ~Accepter();
-    };
+};
 }
