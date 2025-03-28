@@ -1,4 +1,5 @@
 CXX = g++
+LIBS = -lcurl
 CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -std=c++17
 SRC_DIR = src
 INC_DIR = include
@@ -14,7 +15,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
 	@echo "Compiled $(TARGET)"
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
