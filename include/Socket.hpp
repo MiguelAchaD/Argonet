@@ -8,7 +8,7 @@
 #include <atomic>
 
 namespace proxyServer {
-    class Socket {
+class Socket {
     protected:
         int socket_fd;
         struct sockaddr_in address;
@@ -26,6 +26,11 @@ namespace proxyServer {
             DEFERRED,
             ASYNC
         };
+        enum class SocketType {
+            ACCEPTER,
+            FORWARDER,
+            SENDER
+        };
         Socket(unsigned short int t_port_number);
         virtual ~Socket();
 
@@ -34,6 +39,6 @@ namespace proxyServer {
         void startListener(ExecutionType t_execution_type);
 
         bool removeSocket();
-    };
+};
 }
 
