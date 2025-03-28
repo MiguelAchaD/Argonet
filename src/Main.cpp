@@ -1,22 +1,28 @@
 #include "Logger.hpp"
 #include "Server.hpp"
+#include "Command.hpp"
 
 #include <iostream>
 #include <string>
 #include <cstdlib>
 #include <stdexcept>
+#include <csignal>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
+    std::cout << "PID del programa: " << getpid() << "\n";
+    signal(SIGUSR1, proxyServer::Command::setupConfigurationFile);
+
     bool t_log_to_console = false;
-    unsigned short int port = 80;
+    unsigned short int port = 8080;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
-        if (arg == "--echo") {
+        if (arg == "--verbose" || arg == "-v") {
             t_log_to_console = true;
         
-        } else if (arg == "--port") {
+        } else if (arg == "--port" || arg == "-p") {
             if (i + 1 < argc) {
                 try {
                     port = std::stoi(argv[++i]);
@@ -43,9 +49,8 @@ int main(int argc, char *argv[]) {
     }
 
     proxyServer::Logger::initialise(t_log_to_console);
-    proxyServer::Logger::log("Initialising Server on port \"" + std::to_string(port) + "\"...", proxyServer::Logger::LogType::LOG);
 
     proxyServer::Server server = proxyServer::Server(port);
-    server.startServer();
+    server.start();
     return 0;
 }
