@@ -37,7 +37,7 @@ bool proxyServer::Sender::sendToClient(const proxyServer::petitionPacket packet)
     
     if (setsockopt(packet.client_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
         Logger::log("Failed to set send timeout", Logger::LogType::ERROR);
-        closeClientConnection(packet.client_socket);
+        // closeClientConnection(packet.client_socket);
         return false;
     }
 
@@ -49,11 +49,11 @@ bool proxyServer::Sender::sendToClient(const proxyServer::petitionPacket packet)
     if (bytes_sent == -1) {
         Logger::log("Failed to send response: " + std::string(strerror(errno)), 
                     Logger::LogType::ERROR);
-        closeClientConnection(packet.client_socket);
+        // closeClientConnection(packet.client_socket);
         return false;
     }
 
-    closeClientConnection(packet.client_socket);
+    // closeClientConnection(packet.client_socket);
     return true;
 }
 

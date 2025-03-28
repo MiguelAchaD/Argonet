@@ -99,7 +99,7 @@ void proxyServer::Handler::processFutures(FutureContainer& futures, ProcessFunct
                 if (shouldContinue) {
                     it = futures.erase(it);
                 } else {
-                    close(packet.client_socket);
+                    // close(packet.client_socket);
                     proxyServer::Logger::log("Invalid packet received", 
                                              proxyServer::Logger::LogType::WARNING);
                     it = futures.erase(it);
@@ -119,36 +119,27 @@ void proxyServer::Handler::processFutures(FutureContainer& futures, ProcessFunct
 
 void proxyServer::Handler::checkFutures() {
     processFutures(accepterFutures, [this](proxyServer::petitionPacket& packet) {
-        std::cout << "resolving...\n";
         if (packet.client_socket > 0 && !packet.isEmpty()) {
             resolverInvoke(packet);
-            std::cout << "resolved\n";
             return true;
         }
-        std::cout << "resolved\n";
         return false;
     });
 
     processFutures(resolverFutures, [this](proxyServer::petitionPacket& packet) {
-        std::cout << "forwarding...\n";
         if (packet.client_socket > 0 && !packet.isEmpty() && packet.isResolved) {
             forwarderInvoke(packet);
-            std::cout << "forwarded\n";
             return true;
         }
-        std::cout << "forwarded\n";
         return false;
     });
 
     processFutures(forwarderFutures, [this](proxyServer::petitionPacket& packet) {
-        std::cout << "sending...\n";
         if (packet.client_socket > 0 && !packet.isEmpty() && 
             packet.isResolved && !packet.response.empty()) {
             senderInvoke(packet);
-            std::cout << "sended\n";
             return true;
         }
-        std::cout << "sended\n";
         return false;
     });
 }

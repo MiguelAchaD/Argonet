@@ -9,36 +9,24 @@
 
 namespace proxyServer {
 class Socket {
-    protected:
-        int socket_fd;
-        struct sockaddr_in address;
-        unsigned short int port_number;
-        std::thread listen_thread;
-        std::atomic<bool> running;
-        std::atomic<bool> active;
+protected:
+    int socket_fd;
+    struct sockaddr_in address;
+    unsigned short int port_number;
+    std::atomic<bool> running;
 
-        bool bindSocket();
-        bool listenSocket();
-        virtual void listenLoop() = 0;
-
-    public:
-        enum class ExecutionType {
-            DEFERRED,
-            ASYNC
-        };
-        enum class SocketType {
+public:
+    enum class SocketType {
             ACCEPTER,
             FORWARDER,
             SENDER
-        };
-        Socket(unsigned short int t_port_number);
-        virtual ~Socket();
+    };
+    Socket(unsigned short int t_port_number);
+    virtual ~Socket();
 
-        bool initialiseSocket();
-        void configureListener();
-        void startListener(ExecutionType t_execution_type);
-
-        bool removeSocket();
+    bool createSocket(int socket_type = SOCK_STREAM);
+    bool setSocketTimeout(int seconds);
+    void closeSocket();
 };
 }
 

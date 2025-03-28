@@ -11,12 +11,10 @@ proxyServer::Socket::~Socket() {
 }
 
 bool proxyServer::Socket::createSocket(int socket_type) {
-    // Verificar si ya existe un socket abierto
     if (socket_fd != -1) {
         closeSocket();
     }
 
-    // Crear nuevo socket
     socket_fd = socket(AF_INET, socket_type, 0);
     if (socket_fd == -1) {
         Logger::log("Failed to create socket: " + std::string(strerror(errno)), 
@@ -37,7 +35,6 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
     timeout.tv_sec = seconds;
     timeout.tv_usec = 0;
 
-    // Establecer timeout para envío y recepción
     if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
         Logger::log("Failed to set receive timeout: " + std::string(strerror(errno)), 
                     Logger::LogType::ERROR);
