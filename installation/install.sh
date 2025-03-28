@@ -37,7 +37,7 @@ ENDCOLOUR=$WHITE
 ## LOGGING METHODS ################################
 ###################################################
 
-function prepare_logs {
+function prepareLogs {
     if [[ ! -d "$LOGS_DIR" ]]; then
         mkdir -p $LOG_DIR
     fi
@@ -72,7 +72,7 @@ function log {
     esac
 }
 
-function ask_for_permission {
+function askForPermission {
     while true; do
         read -rp "Do you want to continue? (y/n): " answer
         case "$answer" in
@@ -133,7 +133,7 @@ function readDependenciesAndInstall {
     fi
 
     log "SUCCESS" "Found dependencies file, prepared for installation..."
-    ask_for_permission
+    askForPermission
 
     while read -r line
     do
@@ -161,7 +161,7 @@ function readDependenciesAndInstall {
 ###################################################
 ## MAIN ###########################################
 ###################################################
-prepare_logs
+prepareLogs
 section "${BLUE}$INSTALLATION_ASCII"
 detectPackageManager
 section "${BLUE}$DEPENDENCIES_ASCII"

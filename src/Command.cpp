@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <cstring>
+#include <csignal>
 
 std::string proxyServer::Command::getCurrentTimestamp() {
     std::time_t now = std::time(nullptr);
@@ -59,4 +60,48 @@ std::string proxyServer::Command::getActiveInterfaceIP() {
     }
 
     return "";
+}
+
+void proxyServer::Command::setupConfigurationFile(int t_sign) {
+    if (t_sign == SIGUSR1) {
+        proxyServer::Logger::log("Received configuration change signal, reconfiguring", proxyServer::Logger::LogType::LOG);
+        proxyServer::Command::applyConfiguration();
+    }
+}
+
+nlohmann::json proxyServer::Command::readConfigurationFile() {
+    std::string configuration_file = getCurrentDir() + "/configuration.json";
+    std::cout << configuration_file << "\n";
+    std::ifstream file(configuration_file);
+    nlohmann::json config;
+    if (file.is_open()) {
+        file >> config;
+    } else {
+        proxyServer::Logger::log("No se pudo abrir el archivo de configuración", proxyServer::Logger::LogType::ERROR);
+        return NULL;
+    }
+    return config; 
+}
+
+bool proxyServer::Command::validateConfigurationFile(nlohmann::json& t_configuration) {
+    if (t_configuration == nullptr || t_configuration == NULL) {
+        return false;
+    }
+    return false;
+}
+
+bool proxyServer::Command::saveApis(nlohmann::json& t_apis) {
+    
+}
+
+bool proxyServer::Command::applyConfiguration() {
+    proxyServer::Logger::log("Applying configuration", proxyServer::Logger::LogType::LOG);
+    nlohmann::json result = readConfigurationFile();
+    bool is_valid = validateConfigurationFile(result);
+    if (!is_valid) {
+        proxyServer::Logger::log("Configuration file is not valid, aborting operation...", proxyServer::Logger::LogType::ERROR);
+        return false;
+    }
+    
+    return true;
 }
