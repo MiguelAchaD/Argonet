@@ -4,44 +4,63 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h> 
+#include <cstring>
+#include <thread>
+#include <chrono>
 
-proxyServer::Sender::Sender(unsigned short int t_port_number)
-        : proxyServer::Socket(t_port_number)
-{
-    proxyServer::Socket::configureListener();
-}
+#include "Sender.hpp"
+#include "Logger.hpp"
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h> 
+#include <cstring>
+
+proxyServer::Sender::Sender(unsigned short int t_port_number) : Socket(t_port_number) {}
 
 proxyServer::Sender::~Sender() {
-    proxyServer::Socket::running = false;
 }
 
-void proxyServer::Sender::sendToClient(std::string &response) {
+bool proxyServer::Sender::sendToClient(const proxyServer::petitionPacket packet) {
+    if (packet.client_socket == -1) {
+        Logger::log("Cannot send: Invalid client socket", Logger::LogType::ERROR);
+        return false;
+    }
 
+    if (packet.response.empty()) {
+        Logger::log("Empty response to send", Logger::LogType::WARNING);
+        return false;
+    }
+
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    
+    if (setsockopt(packet.client_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
+        Logger::log("Failed to set send timeout", Logger::LogType::ERROR);
+        closeClientConnection(packet.client_socket);
+        return false;
+    }
+
+    ssize_t bytes_sent = send(packet.client_socket, 
+                               packet.response.c_str(), 
+                               packet.response.length(), 
+                               0);
+    
+    if (bytes_sent == -1) {
+        Logger::log("Failed to send response: " + std::string(strerror(errno)), 
+                    Logger::LogType::ERROR);
+        closeClientConnection(packet.client_socket);
+        return false;
+    }
+
+    closeClientConnection(packet.client_socket);
+    return true;
 }
 
-void proxyServer::Sender::listenLoop() {
-    while (proxyServer::Socket::running) {
-        int client_socket;
-        struct sockaddr_in client_address;
-        socklen_t client_len = sizeof(client_address);
-
-        client_socket = accept(socket_fd, (struct sockaddr *)&client_address, &client_len);
-        if (client_socket < 0) {
-            if (!proxyServer::Socket::running) break;
-            continue;
-        }
-
-        proxyServer::Logger::log("New client connected! Delegating to handler", proxyServer::Logger::LogType::SUCCESS);
-
-        std::thread client_thread([client_socket]() {
-            char buffer[1024] = {0};
-            ssize_t bytes_received = read(client_socket, buffer, 1024);
-            if (bytes_received > 0) {
-                std::cout << "Client says: " << buffer << std::endl;
-            }
-            close(client_socket);
-        });
-
-        client_thread.detach();
+void proxyServer::Sender::closeClientConnection(int client_socket) {
+    if (client_socket != -1) {
+        close(client_socket);
+        Logger::log("Client connection closed: " + std::to_string(client_socket), 
+                    Logger::LogType::SUCCESS);
     }
 }
