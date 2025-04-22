@@ -1,6 +1,14 @@
 CXX = g++
+<<<<<<< Updated upstream
 LIBS = -lcurl
+=======
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
 CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -std=c++17
+=======
+LIBS = -lcurl -lsqlite3
+CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -Iinclude/APIs -std=c++17
+>>>>>>> Stashed changes
 SRC_DIR = src
 BUILD_DIR = build
 BIN_DIR = bin
