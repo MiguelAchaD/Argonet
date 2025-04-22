@@ -46,9 +46,6 @@ class Handler {
         Pool<proxyServer::Forwarder> m_forwarder_pool;
         Pool<proxyServer::Sender> m_sender_pool;
   
-        bool addToPool(Type t_type);
-        bool removeFromPool(Type t_type);
-
         std::vector<std::future<proxyServer::petitionPacket>> accepterFutures;
         std::vector<std::future<proxyServer::petitionPacket>> resolverFutures;
         std::vector<std::future<proxyServer::petitionPacket>> forwarderFutures;
@@ -62,6 +59,8 @@ class Handler {
         void resolverInvoke(proxyServer::petitionPacket t_packet);
         void forwarderInvoke(proxyServer::petitionPacket t_packet);
         void senderInvoke(proxyServer::petitionPacket t_packet);
+
+        unsigned short int pickPort();
 
         void checkFutures();
 

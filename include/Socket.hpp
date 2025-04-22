@@ -8,62 +8,25 @@
 #include <atomic>
 
 namespace proxyServer {
-<<<<<<< Updated upstream
 class Socket {
-=======
-<<<<<<< Updated upstream
-    class Socket {
-=======
-class Socket {
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-    protected:
-        int socket_fd;
-        struct sockaddr_in address;
-        unsigned short int port_number;
-        std::thread listen_thread;
-        std::atomic<bool> running;
-        std::atomic<bool> active;
+protected:
+    int socket_fd;
+    struct sockaddr_in address;
+    unsigned short int port_number;
+    std::atomic<bool> running;
 
-        bool bindSocket();
-        bool listenSocket();
-        virtual void listenLoop() = 0;
-
-    public:
-        enum class ExecutionType {
-            DEFERRED,
-            ASYNC
-        };
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
-        enum class SocketType {
+public:
+    enum class SocketType {
             ACCEPTER,
             FORWARDER,
             SENDER
-        };
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-        Socket(unsigned short int t_port_number);
-        virtual ~Socket();
-
-        bool initialiseSocket();
-        void configureListener();
-        void startListener(ExecutionType t_execution_type);
-
-        bool removeSocket();
-<<<<<<< Updated upstream
-};
-=======
-<<<<<<< Updated upstream
     };
-=======
+    Socket(unsigned short int t_port_number);
+    virtual ~Socket();
+
+    bool createSocket(int socket_type = SOCK_STREAM);
+    bool setSocketTimeout(int seconds);
+    void closeSocket();
 };
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }
 

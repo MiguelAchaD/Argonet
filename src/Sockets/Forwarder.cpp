@@ -161,6 +161,7 @@ std::string proxyServer::Forwarder::receiveResponse(size_t buffer_size) {
 }
 
 void proxyServer::Forwarder::disconnect() {
+    std::cout << "FORWARDER CLOSINGGGG\n";
     closeSocket();
 <<<<<<< Updated upstream
 =======
