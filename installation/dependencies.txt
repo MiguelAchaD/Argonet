@@ -1,4 +1,23 @@
 g++
 openssl
+<<<<<<< Updated upstream
 libcurl4-openssl-dev
 nlohmann-json3-dev
+=======
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+curl
+=======
+libcurl4-openssl-dev
+nlohmann-json3-dev
+libsqlite3-dev
+sqlite3
+>>>>>>> Stashed changes
+=======
+libcurl4-openssl-dev
+nlohmann-json3-dev
+>>>>>>> c0efdf229e92f4978f156818e4f77faacca9e41e
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes

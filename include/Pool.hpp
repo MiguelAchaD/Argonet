@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Socket.hpp"
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -44,6 +45,66 @@ public:
         }
         return false;
     }
+
+    proxyServer::petitionPacket poolInvokePetitionPacketInitial(unsigned short int t_client_socket) {
+        if (m_pool.empty()) {
+            return {};
+        }
+
+        std::unique_ptr<T> obj = std::move(m_pool.back());
+            // std::cout << "sigue...poolInvokePetitionPacketInitial\n";
+        m_pool.pop_back();
+        
+        if (!obj) {
+            return {};
+        }
+
+        proxyServer::petitionPacket result = obj->execute(t_client_socket);
+
+        m_pool.push_back(std::move(obj));
+            // std::cout << "sigue...poolInvokePetitionPacketInitial\n";
+
+        return result;
+    }
+
+    proxyServer::petitionPacket poolInvokePetitionPacket(proxyServer::petitionPacket t_packet) {
+        if (m_pool.empty()) {
+            return {};
+        }
+
+        std::unique_ptr<T> obj = std::move(m_pool.back());
+            // std::cout << "sigue...poolInvokePetitionPacket\n";
+        m_pool.pop_back();
+        
+        if (!obj) {
+            return {};
+        }
+
+        proxyServer::petitionPacket result = obj->execute(t_packet);
+
+        m_pool.push_back(std::move(obj));
+            // std::cout << "sigue...poolInvokePetitionPacket\n";
+
+        return result;
+    }
+
+    void poolInvokeVoid(proxyServer::petitionPacket t_packet) {
+        if (m_pool.empty()) {
+            return;
+        }
+
+        std::unique_ptr<T> obj = std::move(m_pool.back());
+            // std::cout << "sigue...poolInvokeVoid\n";
+        m_pool.pop_back();
+        
+        if (!obj) {
+            return;
+        }
+
+        obj->execute(t_packet);
+
+        m_pool.push_back(std::move(obj));
+            // std::cout << "sigue...poolInvokeVoid\n";
 
     std::unique_ptr<T> poolInvoke() {
         if (!m_pool.empty()) {
