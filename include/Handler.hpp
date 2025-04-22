@@ -18,6 +18,29 @@ class Handler {
         std::vector<unsigned int> m_port_pool;
         std::vector<unsigned int> m_port_busy_pool;
         
+<<<<<<< Updated upstream
+        Pool<proxyServer::Accepter> m_accepter_pool;
+        Pool<proxyServer::Resolver> m_resolver_pool;
+        Pool<proxyServer::Forwarder> m_forwarder_pool;
+        Pool<proxyServer::Sender> m_sender_pool;
+  
+=======
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+        bool addToPool(Type t_type);
+        bool removeFromPool(Type t_type);
+
+        std::vector<std::future<proxyServer::petitionPacket>> accepterFutures;
+        std::vector<std::future<proxyServer::petitionPacket>> resolverFutures;
+        std::vector<std::future<proxyServer::petitionPacket>> forwarderFutures;
+ 
+        template <typename FutureContainer, typename ProcessFunction>
+        void processFutures(FutureContainer& futures, ProcessFunction processFunction);
+  
+    public:
+<<<<<<< Updated upstream
+=======
+=======
         Pool<proxyServer::Accepter> m_accepter_pool;
         Pool<proxyServer::Resolver> m_resolver_pool;
         Pool<proxyServer::Forwarder> m_forwarder_pool;
@@ -34,6 +57,7 @@ class Handler {
         void processFutures(FutureContainer& futures, ProcessFunction processFunction);
   
     public:
+>>>>>>> Stashed changes
         void accepterInvoke(int t_client_socket);
         void resolverInvoke(proxyServer::petitionPacket t_packet);
         void forwarderInvoke(proxyServer::petitionPacket t_packet);
@@ -41,6 +65,10 @@ class Handler {
 
         void checkFutures();
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         Handler();
         ~Handler();
 };

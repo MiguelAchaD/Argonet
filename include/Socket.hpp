@@ -8,7 +8,15 @@
 #include <atomic>
 
 namespace proxyServer {
+<<<<<<< Updated upstream
 class Socket {
+=======
+<<<<<<< Updated upstream
+    class Socket {
+=======
+class Socket {
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     protected:
         int socket_fd;
         struct sockaddr_in address;
@@ -26,11 +34,20 @@ class Socket {
             DEFERRED,
             ASYNC
         };
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
         enum class SocketType {
             ACCEPTER,
             FORWARDER,
             SENDER
         };
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         Socket(unsigned short int t_port_number);
         virtual ~Socket();
 
@@ -39,6 +56,14 @@ class Socket {
         void startListener(ExecutionType t_execution_type);
 
         bool removeSocket();
+<<<<<<< Updated upstream
 };
+=======
+<<<<<<< Updated upstream
+    };
+=======
+};
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 }
 
