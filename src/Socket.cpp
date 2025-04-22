@@ -9,23 +9,8 @@ proxyServer::Socket::Socket(unsigned short int t_port_number)
 proxyServer::Socket::~Socket() {
     if (running) {
         running = false;
-        if (listen_thread.joinable()) {
-            listen_thread.join();
-        }
     }
     closeSocket();
-}
-
-bool proxyServer::Socket::initialiseSocket() {
-    socket_fd = socket(AF_INET, socket_type, 0);
-
-    if (socket_fd == -1) {
-        Logger::log("Failed to create socket: " + std::string(strerror(errno)), 
-                    Logger::LogType::ERROR);
-        return false;
-    }
-
-    return true;
 }
 
 bool proxyServer::Socket::setSocketTimeout(int seconds) {
@@ -51,6 +36,21 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
                     Logger::LogType::ERROR);
         return false;
     }
+    return true;
+}
+
+bool proxyServer::Socket::createSocket(int socket_type) {
+    if (socket_fd != -1) {
+        closeSocket();
+    }
+
+    socket_fd = socket(AF_INET, socket_type, 0);
+    if (socket_fd == -1) {
+        Logger::log("Failed to create socket: " + std::string(strerror(errno)), 
+                    Logger::LogType::ERROR);
+        return false;
+    }
+
     return true;
 }
 

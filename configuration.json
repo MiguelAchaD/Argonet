@@ -1,11 +1,6 @@
 {
     "APIs": [
-        {
-            "name" : "shodan",
-            "url" : "",
-            "key" : ""
-        },
-        {
+       {
             "name" : "virusTotal",
             "url" : "",
             "key" : ""  

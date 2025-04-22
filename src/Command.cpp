@@ -61,11 +61,6 @@ std::string proxyServer::Command::getActiveInterfaceIP() {
 
     return "";
 }
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
 
 void proxyServer::Command::setupConfigurationFile(int t_sign) {
     if (t_sign == SIGUSR1) {
@@ -110,24 +105,20 @@ bool proxyServer::Command::applyConfiguration() {
     
     return true;
 }
-<<<<<<< Updated upstream
-=======
 
-void proxyServer::Command::openDatabase(sqlite3 &t_db) {
-    int rc = sqlite3_open("db.db", &t_db);
+void proxyServer::Command::openDatabase(sqlite3*& t_db) {
+    int rc = sqlite3_open("db.db", &t_db); 
     if (rc) {
-        proxyServer::Logger::log("Opening the database: " + std::string(sqlite3_errmsg(db)), proxyServer::Logger::LogType::ERROR);
+        proxyServer::Logger::log("Opening the database: " + std::string(sqlite3_errmsg(t_db)), proxyServer::Logger::LogType::ERROR);
         exit(1);
     }
-    proxyServer::Logger::log("Database opened", proxyServer::Logger::LogType::ERROR);
+    proxyServer::Logger::log("Database opened", proxyServer::Logger::LogType::LOG);
 }
 
-void proxyServer::Command::closeDatabase(sqlite3 &t_db) {
-    sqlite3_close(*t_db);
+void proxyServer::Command::closeDatabase(sqlite3* t_db) {
+    sqlite3_close(t_db);  // Ya que t_db es un puntero
 }
 
 void proxyServer::Command::formatDatabase(sqlite3 &t_db) {
     //TODO: Create a sqlite file with a default configuration
 }
->>>>>>> Stashed changes
->>>>>>> Stashed changes

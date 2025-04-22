@@ -23,17 +23,9 @@ proxyServer::Server::~Server() {
     stop();
 }
 
-<<<<<<< Updated upstream
 bool proxyServer::Server::initialize(unsigned short int port_number) {
-=======
-<<<<<<< Updated upstream
-void proxyServer::Server::startServer() {
-    proxyServer::Socket::startListener(proxyServer::Socket::ExecutionType::DEFERRED);
-=======
-bool proxyServer::Server::initialize(unsigned short int port_number) {
-    proxyServer::Command::openDatabase(*proxyServer::Server::db);
+    //proxyServer::Command::openDatabase(proxyServer::Server::db);
 
->>>>>>> Stashed changes
     m_ip_address = proxyServer::Command::getActiveInterfaceIP();
     if (m_ip_address.empty()) {
         proxyServer::Logger::log("Failed to get active interface IP", proxyServer::Logger::LogType::ERROR);
@@ -70,10 +62,6 @@ bool proxyServer::Server::initialize(unsigned short int port_number) {
     fcntl(socket_fd, F_SETFL, O_NONBLOCK);
 
     return true;
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }
 
 void proxyServer::Server::start() {

@@ -59,26 +59,10 @@ std::string proxyServer::Accepter::readContents(int t_client_socket) {
     return std::string(buffer);
 }
 
-<<<<<<< Updated upstream
-proxyServer::petitionPacket proxyServer::Accepter::examineContents(int t_client_socket) {
-=======
-<<<<<<< Updated upstream
-void proxyServer::Accepter::reject() {
-
-}
-
-void proxyServer::Accepter::examineContents() {
-
-=======
 proxyServer::petitionPacket proxyServer::Accepter::execute(int t_client_socket) {
->>>>>>> Stashed changes
     std::string result = readContents(t_client_socket);
     proxyServer::petitionPacket contents = parseContents(result);
     contents.client_socket = t_client_socket;
     
     return contents;
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }

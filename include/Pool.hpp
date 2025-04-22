@@ -105,6 +105,7 @@ public:
 
         m_pool.push_back(std::move(obj));
             // std::cout << "sigue...poolInvokeVoid\n";
+    }
 
     std::unique_ptr<T> poolInvoke() {
         if (!m_pool.empty()) {
@@ -119,7 +120,4 @@ public:
     void poolRevoke(std::unique_ptr<T> t_object) {
         makeAvailable(t_object);
     }
-
-    Pool() = default;
-    ~Pool() = default;
 };

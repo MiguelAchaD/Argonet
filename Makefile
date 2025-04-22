@@ -1,14 +1,6 @@
 CXX = g++
-<<<<<<< Updated upstream
-LIBS = -lcurl
-=======
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -std=c++17
-=======
 LIBS = -lcurl -lsqlite3
 CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -Iinclude/APIs -std=c++17
->>>>>>> Stashed changes
 SRC_DIR = src
 BUILD_DIR = build
 BIN_DIR = bin
@@ -21,20 +13,20 @@ OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-		@mkdir -p $(BIN_DIR)
-			$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
-				@echo "Compiled $(TARGET)"
+	@mkdir -p $(BIN_DIR)
+		$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
+			@echo "Compiled $(TARGET)"
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-		@mkdir -p $(dir $@)
-			$(CXX) $(CXXFLAGS) -c $< -o $@
+	@mkdir -p $(dir $@)
+		$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-		rm -rf $(BUILD_DIR) $(TARGET) $(PROGRAM_LOG_DIR)/*
-			@echo "Compiled files deleted."
+	rm -rf $(BUILD_DIR) $(TARGET) $(PROGRAM_LOG_DIR)/*
+		@echo "Compiled files deleted."
 
 run: all
-		./$(TARGET)
+	./$(TARGET)
 
 .PHONY: clean all run
 
