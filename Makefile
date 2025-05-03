@@ -3,10 +3,13 @@ CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -Iinclude/APIs -std=c++17
 SRC_DIR = src
 BUILD_DIR = build
 BIN_DIR = bin
-PROGRAM_LOG_DIR = $(BIN_DIR)/logs
-TARGET = $(BIN_DIR)/main
+RELEASE_DIR = release
+PROGRAM_NAME = proxy-server
+RELEASE_TARGET = $(RELEASE_DIR)/$(PROGRAM_NAME)
+DEBUG_TARGET = $(BIN_DIR)/main
 VCPKG = vcpkg/vcpkg
 VCPKG_LIBS = curl sqlite3 nlohmann-json
+
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
@@ -16,18 +19,13 @@ ifeq ($(UNAME_S),Darwin)
   else
     VCPKG_TRIPLET = x64-osx
   endif
-  FRAMEWORKS = -framework CoreFoundation -framework Security -framework SystemConfiguration
-  EXTRA_LIBS = -lz
 else ifeq ($(UNAME_S),Linux)
   VCPKG_TRIPLET = x64-linux
-  FRAMEWORKS =
-  EXTRA_LIBS =
 else
   $(error Unsupported system: $(UNAME_S))
 endif
 
 VCPKG_INSTALLED_DIR = vcpkg/installed/$(VCPKG_TRIPLET)
-
 CXXFLAGS += -I$(VCPKG_INSTALLED_DIR)/include
 
 define check_installed
@@ -39,7 +37,7 @@ dependencies:
 	@missing=0; \
 	for pkg in $(VCPKG_LIBS); do \
 		if ! $(VCPKG) list | grep -q "$$pkg"; then \
-			echo "$$pkg missing"; \
+			echo "Missing: $$pkg"; \
 			missing=1; \
 		fi; \
 	done; \
@@ -55,31 +53,64 @@ OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRCS))
 
 LDFLAGS = -L$(VCPKG_INSTALLED_DIR)/lib
 
-LIBS = -lcurl -lsqlite3 $(FRAMEWORKS) $(EXTRA_LIBS)
+DEBUG_LIBS = -lcurl -lsqlite3 -lz -pthread
 
-all: dependencies $(TARGET)
+RELEASE_LDFLAGS = -static
+RELEASE_LIBS = -Wl,-Bstatic -lcurl -lsqlite3 -lnghttp2 -lssl -lcrypto -lz -Wl,-Bdynamic -ldl -pthread
 
-$(TARGET): $(OBJS)
+all: dependencies json-check $(DEBUG_TARGET)
+
+json-check:
+	@echo "Checking nlohmann/json.hpp header..."
+	@if [ -f "$(VCPKG_INSTALLED_DIR)/include/nlohmann/json.hpp" ]; then \
+		echo "JSON header found at $(VCPKG_INSTALLED_DIR)/include/nlohmann/json.hpp"; \
+	else \
+		echo "JSON header not found! Checking alternative locations..."; \
+		find $(VCPKG_INSTALLED_DIR)/include -name "json.hpp" | grep .; \
+	fi
+
+$(DEBUG_TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
-	@echo "Compiled successfuly: $(TARGET)"
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(DEBUG_LIBS)
+	@echo "Debug build compiled: $(DEBUG_TARGET)"
+
+release: dependencies json-check release-build
+
+release-build: $(OBJS)
+	@mkdir -p $(RELEASE_DIR)
+	$(CXX) $(CXXFLAGS) $^ -o $(RELEASE_TARGET) $(LDFLAGS) $(RELEASE_LDFLAGS) $(RELEASE_LIBS)
+	strip --strip-all $(RELEASE_TARGET)
+	@echo "Release build compiled: $(RELEASE_TARGET)"
+	
+package: release
+	@echo "Creating distribution package..."
+	@mkdir -p $(RELEASE_DIR)/$(PROGRAM_NAME)
+	@cp $(RELEASE_TARGET) $(RELEASE_DIR)/$(PROGRAM_NAME)/
+	@if [ -d "config" ]; then cp -r config $(RELEASE_DIR)/$(PROGRAM_NAME)/; fi
+	@echo '#!/bin/bash\necho "Installing $(PROGRAM_NAME)..."\nmkdir -p ~/.local/bin\ncp $(PROGRAM_NAME) ~/.local/bin/\necho "Installed to ~/.local/bin/$(PROGRAM_NAME)"' > $(RELEASE_DIR)/$(PROGRAM_NAME)/install.sh
+	@chmod +x $(RELEASE_DIR)/$(PROGRAM_NAME)/install.sh
+	@cd $(RELEASE_DIR) && tar -czvf $(PROGRAM_NAME)-linux-x64.tar.gz $(PROGRAM_NAME)
+	@echo "Package created: $(RELEASE_DIR)/$(PROGRAM_NAME)-linux-x64.tar.gz"
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
-	@echo "Clean."
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(RELEASE_DIR)
+	@echo "Cleaned."
 
 run: all
-	./$(TARGET)
+	./$(DEBUG_TARGET)
 
-debug:
+debug-info:
 	@echo "Include paths: $(CXXFLAGS)"
+	@echo "JSON header location check:"
 	@find $(VCPKG_INSTALLED_DIR)/include -name "json.hpp" -o -name "*.json*"
 	@echo "Library paths: $(LDFLAGS)"
-	@echo "Libraries: $(LIBS)"
-	@echo "Frameworks: $(FRAMEWORKS)"
+	@echo "Libraries: $(DEBUG_LIBS)"
+	@echo "Try compilation with verbose output:"
+	@echo '  make clean && make VERBOSE=1'
+	@ldd $(DEBUG_TARGET) 2>/dev/null || echo "No dynamic dependencies found or ldd failed"
 
-.PHONY: clean all run dependencies debug
+.PHONY: clean all run dependencies release release-build package debug-info json-check
