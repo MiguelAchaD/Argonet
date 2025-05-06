@@ -1,4 +1,4 @@
-<img src="assets/logo.png" alt="Argonet Logo" width="200"/>
+<img src="assets/Logo.svg" alt="Argonet Logo" width="200"/>
 
 # Argonet
 ## 💿Installation
