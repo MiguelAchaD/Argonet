@@ -8,8 +8,20 @@ Use the [Releases](https://github.com/MiguelAchaD/Argonet/releases/latest) link 
 If you want to build it your own, first you need to clone the repository containing the proyect:
 ```bash
 git clone https://github.com/MiguelAchaD/Argonet.git
+cd Argonet
 ```
-The dependencies are embedded inside the proyect for better portability.
+
+The dependencies can be installed manually or using the "install" proyect script.
+### Manual
+#### APT
+```bash
+sudo apt-get install make g++ openssl libcurl4-openssl-dev nlohmann-json3-dev libsqlite3-dev
+```
+### Automatic (this will only work with the supported package managers)
+```bash
+./installation/install.sh
+```
+
 To build the proyect in the proyect directory just use:
 ```bash
 make
