@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy Server Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen">
+        <!-- Login/Register Form -->
+        <div id="auth-container" class="container mx-auto px-4 py-8">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Proxy Server Control Panel</h2>
+                
+                <!-- Login Form -->
+                <div id="login-form" class="mb-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Login</h3>
+                    <form onsubmit="return handleLogin(event)">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="login-username">
+                                Username
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   id="login-username" type="text" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="login-password">
+                                Password
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   id="login-password" type="password" required>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    type="submit">
+                                Sign In
+                            </button>
+                            <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                               href="#" onclick="toggleForms()">
+                                Need an account?
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form" class="hidden">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Register</h3>
+                    <form onsubmit="return handleRegister(event)">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="register-username">
+                                Username
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   id="register-username" type="text" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="register-password">
+                                Password
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   id="register-password" type="password" required>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    type="submit">
+                                Register
+                            </button>
+                            <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                               href="#" onclick="toggleForms()">
+                                Already have an account?
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden container mx-auto px-4 py-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                    <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Logout
+                    </button>
+                </div>
+
+                <!-- Status Card -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Server Status</h3>
+                    <div id="status-content" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="font-semibold text-gray-600">Status</h4>
+                            <p id="server-status" class="text-lg">Loading...</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="font-semibold text-gray-600">Uptime</h4>
+                            <p id="server-uptime" class="text-lg">Loading...</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="font-semibold text-gray-600">Active Connections</h4>
+                            <p id="active-connections" class="text-lg">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Card -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Configuration</h3>
+                    <div id="config-content" class="space-y-4">
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="font-semibold text-gray-600 mb-2">Current Configuration</h4>
+                            <pre id="current-config" class="bg-gray-100 p-4 rounded overflow-x-auto">Loading...</pre>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="font-semibold text-gray-600 mb-2">Update Configuration</h4>
+                            <textarea id="new-config" class="w-full h-48 p-2 border rounded" placeholder="Enter new configuration in JSON format"></textarea>
+                            <button onclick="updateConfig()" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Update Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        const API_BASE = 'http://localhost:8081/api';
+
+        // Check if user is already logged in
+        if (token) {
+            showDashboard();
+        }
+
+        function toggleForms() {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            loginForm.classList.toggle('hidden');
+            registerForm.classList.toggle('hidden');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await axios.post(`${API_BASE}/login`, {
+                    username,
+                    password
+                });
+
+                if (response.data.status === 'success') {
+                    token = response.data.token;
+                    localStorage.setItem('token', token);
+                    showDashboard();
+                }
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const response = await axios.post(`${API_BASE}/register`, {
+                    username,
+                    password
+                });
+
+                if (response.data.status === 'success') {
+                    alert('Registration successful! Please login.');
+                    toggleForms();
+                }
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        }
+
+        function handleLogout() {
+            token = null;
+            localStorage.removeItem('token');
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            updateStatus();
+            updateConfig();
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await axios.post(`${API_BASE}/status`, { token });
+                if (response.data.status === 'success') {
+                    document.getElementById('server-status').textContent = response.data.status;
+                    document.getElementById('server-uptime').textContent = response.data.uptime;
+                    document.getElementById('active-connections').textContent = response.data.active_connections;
+                }
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+
+        async function updateConfig() {
+            try {
+                const response = await axios.post(`${API_BASE}/config`, { token });
+                if (response.data) {
+                    document.getElementById('current-config').textContent = JSON.stringify(response.data, null, 2);
+                }
+            } catch (error) {
+                console.error('Failed to update config:', error);
+            }
+        }
+
+        async function saveConfig() {
+            const newConfig = document.getElementById('new-config').value;
+            try {
+                const response = await axios.post(`${API_BASE}/config/update`, {
+                    token,
+                    config: JSON.parse(newConfig)
+                });
+                if (response.data.status === 'success') {
+                    alert('Configuration updated successfully!');
+                    updateConfig();
+                }
+            } catch (error) {
+                alert('Failed to update configuration: ' + error.message);
+            }
+        }
+
+        // Update status every 5 seconds
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html> 
