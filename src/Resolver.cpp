@@ -14,7 +14,7 @@ proxyServer::petitionPacket proxyServer::Resolver::execute(proxyServer::petition
         t_packet.isResolved = false;
         return t_packet;
     }
-
+  
     t_packet.isResolved = true;
     return t_packet;
 }

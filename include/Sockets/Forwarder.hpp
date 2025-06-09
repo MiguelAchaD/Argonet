@@ -19,6 +19,5 @@ namespace proxyServer {
       ~Forwarder();
 
       proxyServer::petitionPacket execute(proxyServer::petitionPacket t_packet);
-      proxyServer::petitionPacket fetch(proxyServer::petitionPacket t_packet);
   };
 }

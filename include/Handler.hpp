@@ -39,6 +39,7 @@ private:
     std::mutex m_queue_mutex;
     std::condition_variable m_queue_cv;
     std::atomic<bool> m_running{false};
+
 };
 
 } // namespace proxyServer

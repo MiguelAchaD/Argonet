@@ -9,13 +9,11 @@
 
 namespace proxyServer {
 class Socket {
-    protected:
-        int socket_fd;
-        struct sockaddr_in address;
-        unsigned short int port_number;
-        std::thread listen_thread;
-        std::atomic<bool> running;
-        std::atomic<bool> active;
+protected:
+    int socket_fd;
+    struct sockaddr_in address;
+    unsigned short int port_number;
+    std::atomic<bool> running;
 
         bool createSocket(int socket_type = SOCK_STREAM);
         void closeSocket();

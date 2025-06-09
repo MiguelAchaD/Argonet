@@ -19,6 +19,8 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
         return false;
     }
 
+    proxyServer::Logger::log("Listening on port " + std::to_string(port_number), proxyServer::Logger::LogType::SUCCESS);
+
     struct timeval timeout;
     timeout.tv_sec = seconds;
     timeout.tv_usec = 0;

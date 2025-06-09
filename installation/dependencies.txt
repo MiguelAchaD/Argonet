@@ -1,2 +1,6 @@
-gcc
+make
+g++
 openssl
+libcurl4-openssl-dev
+nlohmann-json3-dev
+libsqlite3-dev

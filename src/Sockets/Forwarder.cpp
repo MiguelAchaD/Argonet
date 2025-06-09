@@ -16,7 +16,7 @@ proxyServer::petitionPacket proxyServer::Forwarder::execute(proxyServer::petitio
         t_packet.isForwarder = false;
         return t_packet;
     }
-
+  
     if (connect(t_packet.host, 80)) {
         sendRequest(t_packet);
         t_packet.response = FastString(receiveResponse());

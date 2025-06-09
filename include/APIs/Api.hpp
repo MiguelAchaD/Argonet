@@ -8,15 +8,19 @@ namespace proxyServer {
 class Api {
 private:
     enum class OperationType { GET, POST, PUT };
-    std::string m_name;
     std::string m_url;
-    std::string m_key;
+    std::vector<std::string> m_keys;
     OperationType m_operation_type;
     CURL* m_curl;
 
+    std::string fetch();
+    std::string fetchUsingKey();std::string getRandomKey();
+
 public:
-    Api(const std::string& t_name, const std::string& t_url, const std::string& t_key);
+    Api(const std::string& t_url);
     ~Api();
+
+    void addKey(std::string t_key);
 
     Api(const Api&) = delete;
     Api& operator=(const Api&) = delete;
@@ -24,7 +28,7 @@ public:
     Api(Api&&) noexcept;
     Api& operator=(Api&&) noexcept;
 
-    std::string fetch();
+    virtual std::string callApi();
 };
 }
 

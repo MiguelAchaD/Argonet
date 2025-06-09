@@ -6,8 +6,8 @@
 
 namespace proxyServer {
 
-Api::Api(const std::string& t_name, const std::string& t_url, const std::string& t_key)
-    : m_name(t_name), m_url(t_url), m_key(t_key), m_curl(curl_easy_init()) {
+Api::Api(const std::string& t_url)
+    : m_url(t_url), m_curl(curl_easy_init()) {
     if (!m_curl) {
         throw std::runtime_error("Error al inicializar cURL");
     }
@@ -19,19 +19,21 @@ Api::~Api() {
     }
 }
 
+void Api::addKey(std::string t_key) {
+    m_keys.push_back(t_key);
+}
+
 Api::Api(Api&& other) noexcept
-    : m_name(std::move(other.m_name)),
-      m_url(std::move(other.m_url)),
-      m_key(std::move(other.m_key)),
+    : m_url(std::move(other.m_url)),
+      m_keys(std::move(other.m_keys)),
       m_curl(other.m_curl) {
     other.m_curl = nullptr;
 }
 
 Api& Api::operator=(Api&& other) noexcept {
     if (this != &other) {
-        m_name = std::move(other.m_name);
         m_url = std::move(other.m_url);
-        m_key = std::move(other.m_key);
+        m_keys = std::move(other.m_keys);
         std::swap(m_curl, other.m_curl);
     }
     return *this;
@@ -71,6 +73,10 @@ std::string Api::fetch() {
     }
 
     return response_string;
+}
+
+std::string Api::callApi() {
+    return "";
 }
 
 }
