@@ -17,9 +17,9 @@ class Socket {
         std::atomic<bool> running;
         std::atomic<bool> active;
 
-        bool bindSocket();
-        bool listenSocket();
-        virtual void listenLoop() = 0;
+        bool createSocket(int socket_type = SOCK_STREAM);
+        void closeSocket();
+        bool setSocketTimeout(int seconds);
 
     public:
         enum class ExecutionType {
@@ -33,12 +33,6 @@ class Socket {
         };
         Socket(unsigned short int t_port_number);
         virtual ~Socket();
-
-        bool initialiseSocket();
-        void configureListener();
-        void startListener(ExecutionType t_execution_type);
-
-        bool removeSocket();
 };
 }
 

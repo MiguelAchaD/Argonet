@@ -11,16 +11,35 @@ proxyServer::Forwarder::~Forwarder() {
     disconnect();
 }
 
-proxyServer::petitionPacket proxyServer::Forwarder::fetch(proxyServer::petitionPacket t_packet) {
+proxyServer::petitionPacket proxyServer::Forwarder::execute(proxyServer::petitionPacket t_packet) {
+    if (!t_packet.isResolved) {
+        t_packet.isForwarder = false;
+        return t_packet;
+    }
+
     if (connect(t_packet.host, 80)) {
         sendRequest(t_packet);
-        t_packet.response = receiveResponse();
+        t_packet.response = FastString(receiveResponse());
+        t_packet.isForwarder = true;
         /*disconnect();*/
+    } else {
+        t_packet.isResolved = false;
     }
     return t_packet;
 }
 
-bool proxyServer::Forwarder::connect(const std::string& host, int port) {
+std::string proxyServer::Forwarder::sendRequest(const proxyServer::petitionPacket& packet) {
+    std::string request = packet.toString();
+    ssize_t bytes_sent = send(socket_fd, request.c_str(), request.length(), 0);
+    
+    if (bytes_sent == -1) {
+        Logger::log("Send failed: " + std::string(strerror(errno)), Logger::LogType::ERROR);
+        return "";
+    }
+    return std::to_string(bytes_sent);
+}
+
+bool proxyServer::Forwarder::connect(const FastString& host, int port) {
     struct addrinfo hints, *servinfo;
     
     memset(&hints, 0, sizeof(hints));
@@ -44,24 +63,11 @@ bool proxyServer::Forwarder::connect(const std::string& host, int port) {
     if (::connect(socket_fd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
         Logger::log("Connection failed: " + std::string(strerror(errno)), Logger::LogType::ERROR);
         freeaddrinfo(servinfo);
-        /*disconnect();*/
         return false;
     }
 
     freeaddrinfo(servinfo);
     return true;
-}
-
-std::string proxyServer::Forwarder::sendRequest(const proxyServer::petitionPacket& packet) {
-    std::string request = packet.toString();
-    ssize_t bytes_sent = send(socket_fd, request.c_str(), request.length(), 0);
-    
-    if (bytes_sent == -1) {
-        Logger::log("Send failed: " + std::string(strerror(errno)), Logger::LogType::ERROR);
-        return "";
-    }
-
-    return request;
 }
 
 std::string proxyServer::Forwarder::receiveResponse(size_t buffer_size) {
@@ -78,5 +84,6 @@ std::string proxyServer::Forwarder::receiveResponse(size_t buffer_size) {
 }
 
 void proxyServer::Forwarder::disconnect() {
+    std::cout << "FORWARDER CLOSINGGGG\n";
     closeSocket();
 }

@@ -1,20 +1,15 @@
 #include "Accepter.hpp"
 #include "Logger.hpp"
+#include "Blacklist.hpp"
 
 #include <iostream>
 #include <unistd.h> 
 #include <regex>
 
-proxyServer::Accepter::Accepter() {
+namespace proxyServer {
 
-}
-
-proxyServer::Accepter::~Accepter() {
-
-}
-
-proxyServer::petitionPacket proxyServer::Accepter::parseContents(std::string t_result) {
-    proxyServer::petitionPacket result;
+petitionPacket Accepter::parseContents(std::string t_result) {
+    petitionPacket result;
 
     std::regex pattern(R"((?=\s*)(Host|User-Agent|Accept|Accept-Language|Accept-Encoding|Connection|Pragma|Cache)(?=\s*):(\s*)(.*?)(?=\r?\n|$))");
     std::smatch matches;
@@ -49,20 +44,29 @@ proxyServer::petitionPacket proxyServer::Accepter::parseContents(std::string t_r
     return result;
 }
 
-std::string proxyServer::Accepter::readContents(int t_client_socket) {
+std::string Accepter::readContents(int t_client_socket) {
     char buffer[1024] = {0};
     ssize_t bytes_received = read(t_client_socket, buffer, 1024);
     if (bytes_received < 0) {
-        proxyServer::Logger::log("Failed to read data from client", proxyServer::Logger::LogType::ERROR);
+        Logger::log("Failed to read data from client", Logger::LogType::ERROR);
         return "";
     }
     return std::string(buffer);
 }
 
-proxyServer::petitionPacket proxyServer::Accepter::examineContents(int t_client_socket) {
+petitionPacket Accepter::execute(int t_client_socket) {
     std::string result = readContents(t_client_socket);
-    proxyServer::petitionPacket contents = parseContents(result);
+    petitionPacket contents = parseContents(result);
     contents.client_socket = t_client_socket;
     
+    // Check if host is allowed
+    if (!Blacklist::getInstance().isAllowed(contents.host.c_str())) {
+        contents.isAccepted = false;
+        return contents;
+    }
+    
+    contents.isAccepted = true;
     return contents;
 }
+
+} // namespace proxyServer

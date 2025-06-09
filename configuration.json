@@ -1,0 +1,23 @@
+{
+    "server_configuration": [
+       {
+		"port" : 8080,
+	    "verbose" : true,
+	    "max_threads" : 20,
+	    "max_accepter" : -1,
+	    "max_forwarder" : -1,
+	    "max_resolver" : -1,
+	    "max_sender" : -1,
+	    "pool_formula" : "AxFxRxS"
+        }
+    ],
+	"blacklist": {
+        "patterns": [
+            ".*\\.example\\.com$",
+            ".*\\.trusted\\.org$",
+            "api\\..*\\.com$",
+            "static\\..*\\.net$",
+            "cdn\\..*\\.io$"
+        ]
+    }
+}

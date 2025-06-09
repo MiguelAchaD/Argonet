@@ -1,127 +1,128 @@
 #pragma once
 
-<<<<<<< Updated upstream
-#include "Socket.hpp"
-#include <iostream>
 #include <vector>
 #include <memory>
+#include <mutex>
+#include <atomic>
 #include <algorithm>
-=======
-<<<<<<< Updated upstream
+#include <stdexcept>
+#include <functional>
+#include "Packet.hpp"
+#include "Logger.hpp"
+
 namespace proxyServer {
-    class Pool {
-    private:
-        
->>>>>>> Stashed changes
 
-template <typename T>
-class Pool {
-    private:
-        std::vector<std::unique_ptr<T>> m_pool;
-
-    public:
-        bool addToPool(std::unique_ptr<T>&& t_object) {
-            m_pool.push_back(std::move(t_object));
-            return true;
-        }
-
-        bool addToPoolN(unsigned short int t_number) {
-            for (size_t i = 0; i < t_number; i++) {
-                m_pool.push_back(std::make_unique<T>());
-            }
-            return true;
-        }
-
-        bool removeFromPool(T& t_object) {
-            auto it = std::find_if(m_pool.begin(), m_pool.end(), 
-                [&t_object](const std::unique_ptr<T>& obj) {
-                    return *obj == t_object;
-                });
-            if (it != m_pool.end()) {
-                m_pool.erase(it);
-                return true;
-            }
-            return false;
-        }
-
-        bool removeFromPoolN(unsigned short int t_number) {
-            if (t_number > m_pool.size()) {
-                return false;
-            }
-            m_pool.erase(m_pool.end() - t_number, m_pool.end());
-            return true;
-        }
-
-        Pool() {}
-        ~Pool() {
-            m_pool.clear();
-}
-<<<<<<< Updated upstream
-};
-
-=======
-=======
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <algorithm>
-
-template <typename T>
+template<typename T, bool RequiresPort = false>
 class Pool {
 private:
-    std::vector<std::unique_ptr<T>> m_pool;
-    std::vector<std::unique_ptr<T>> m_pool_busy;
+    struct PoolObject {
+        std::unique_ptr<T> object;
+        std::atomic<bool> in_use{false};
 
-    void makeAvailable(std::unique_ptr<T>& t_object) {
-        auto it = std::find_if(m_pool_busy.begin(), m_pool_busy.end(), 
-            [&t_object](const std::unique_ptr<T>& uptr) { return uptr.get() == t_object.get(); });
-
-        if (it != m_pool_busy.end()) {
-            m_pool.push_back(std::move(*it));
-            m_pool_busy.erase(it);
+        PoolObject() = default;
+        PoolObject(PoolObject&& other) noexcept 
+            : object(std::move(other.object)), in_use(other.in_use.load()) {}
+        PoolObject& operator=(PoolObject&& other) noexcept {
+            if (this != &other) {
+                object = std::move(other.object);
+                in_use.store(other.in_use.load());
+            }
+            return *this;
         }
+    };
+
+    std::vector<PoolObject> m_objects;
+    std::mutex m_mutex;
+    std::atomic<size_t> m_total_count{0};
+    std::atomic<size_t> m_available_count{0};
+    std::atomic<size_t> m_high_water_mark{0};
+    const size_t m_initial_size;
+    const size_t m_max_size;
+    std::function<void()> m_on_object_created;
+
+    unsigned short int pickPort() {
+        static unsigned short int port = 8080;
+        return port++;
+    }
+
+    void initializePool(size_t size) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_objects.reserve(size);
+        for (size_t i = 0; i < size; ++i) {
+            m_objects.emplace_back();
+            if constexpr (RequiresPort) {
+                m_objects.back().object = std::make_unique<T>(pickPort());
+            } else {
+                m_objects.back().object = std::make_unique<T>();
+            }
+            m_objects.back().in_use = false;
+        }
+        m_total_count = size;
+        m_available_count = size;
     }
 
 public:
-    bool addToPool(std::unique_ptr<T> t_object) {
-        m_pool.push_back(std::move(t_object));
-        return true;
+    Pool(size_t initial_size = 10, size_t max_size = 100, 
+         std::function<void()> on_object_created = nullptr)
+        : m_initial_size(initial_size)
+        , m_max_size(max_size)
+        , m_on_object_created(std::move(on_object_created)) {
+        initializePool(initial_size);
     }
 
-    bool addToPoolN(unsigned short int t_number) {
-        for (size_t i = 0; i < t_number; i++) {
-            m_pool.push_back(std::make_unique<T>());
+    T* acquire() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        
+        // Try to find an available object
+        for (auto& obj : m_objects) {
+            if (!obj.in_use) {
+                obj.in_use = true;
+                m_available_count--;
+                m_high_water_mark = std::max(m_high_water_mark.load(), 
+                                           m_total_count.load() - m_available_count.load());
+                return obj.object.get();
+            }
         }
-        return true;
-    }
 
-    bool removeFromPool(T& t_object) {
-        auto it = std::find_if(m_pool.begin(), m_pool.end(), 
-            [&t_object](const std::unique_ptr<T>& obj) { return obj.get() == &t_object; });
-
-        if (it != m_pool.end()) {
-            m_pool.erase(it);
-            return true;
+        // If we haven't reached max size, create a new object
+        if (m_total_count < m_max_size) {
+            m_objects.emplace_back();
+            if constexpr (RequiresPort) {
+                m_objects.back().object = std::make_unique<T>(pickPort());
+            } else {
+                m_objects.back().object = std::make_unique<T>();
+            }
+            m_objects.back().in_use = true;
+            m_total_count++;
+            m_high_water_mark = std::max(m_high_water_mark.load(), 
+                                       m_total_count.load() - m_available_count.load());
+            
+            // Notify that a new object was created
+            if (m_on_object_created) {
+                m_on_object_created();
+            }
+            
+            return m_objects.back().object.get();
         }
-        return false;
+
+        throw std::runtime_error("Pool exhausted");
     }
 
-    std::unique_ptr<T> poolInvoke() {
-        if (!m_pool.empty()) {
-            std::unique_ptr<T> obj = std::move(m_pool.back());
-            m_pool.pop_back();
-            m_pool_busy.push_back(std::move(obj));
-            return std::move(m_pool_busy.back());
+    void release(T* obj) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (auto& pool_obj : m_objects) {
+            if (pool_obj.object.get() == obj) {
+                pool_obj.in_use = false;
+                m_available_count++;
+                return;
+            }
         }
-        return nullptr;
+        throw std::runtime_error("Object not found in pool");
     }
 
-    void poolRevoke(std::unique_ptr<T> t_object) {
-        makeAvailable(t_object);
-    }
-
-    Pool() = default;
-    ~Pool() = default;
+    size_t getTotalCount() const { return m_total_count; }
+    size_t getAvailableCount() const { return m_available_count; }
+    size_t getHighWaterMark() const { return m_high_water_mark; }
 };
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+} // namespace proxyServer

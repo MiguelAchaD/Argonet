@@ -9,7 +9,8 @@ namespace proxyServer {
       Sender(unsigned short int t_port_number);
       ~Sender();
 
-      bool sendToClient(const petitionPacket packet);
+      bool execute(const petitionPacket packet);
       void closeClientConnection(int client_socket);
+      void disconnect();
   };
 }

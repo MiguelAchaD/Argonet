@@ -7,24 +7,10 @@ proxyServer::Socket::Socket(unsigned short int t_port_number)
     : socket_fd(-1), port_number(t_port_number), running(false) {}
 
 proxyServer::Socket::~Socket() {
+    if (running) {
+        running = false;
+    }
     closeSocket();
-}
-
-bool proxyServer::Socket::createSocket(int socket_type) {
-    // Verificar si ya existe un socket abierto
-    if (socket_fd != -1) {
-        closeSocket();
-    }
-
-    // Crear nuevo socket
-    socket_fd = socket(AF_INET, socket_type, 0);
-    if (socket_fd == -1) {
-        Logger::log("Failed to create socket: " + std::string(strerror(errno)), 
-                    Logger::LogType::ERROR);
-        return false;
-    }
-
-    return true;
 }
 
 bool proxyServer::Socket::setSocketTimeout(int seconds) {
@@ -37,7 +23,6 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
     timeout.tv_sec = seconds;
     timeout.tv_usec = 0;
 
-    // Establecer timeout para envío y recepción
     if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
         Logger::log("Failed to set receive timeout: " + std::string(strerror(errno)), 
                     Logger::LogType::ERROR);
@@ -49,6 +34,20 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
                     Logger::LogType::ERROR);
         return false;
     }
+    return true;
+}
+
+bool proxyServer::Socket::createSocket(int socket_type) {
+    if (socket_fd != -1) {
+        closeSocket();
+    }
+
+    socket_fd = socket(AF_INET, socket_type, 0);
+    if (socket_fd == -1) {
+        Logger::log("Failed to create socket: " + std::string(strerror(errno)), 
+                    Logger::LogType::ERROR);
+        return false;
+    }
 
     return true;
 }
@@ -56,8 +55,7 @@ bool proxyServer::Socket::setSocketTimeout(int seconds) {
 void proxyServer::Socket::closeSocket() {
     if (socket_fd != -1) {
         close(socket_fd);
-        Logger::log("Socket closed: " + std::to_string(socket_fd), 
-                    Logger::LogType::SUCCESS);
+        
         socket_fd = -1;
         running = false;
     }
