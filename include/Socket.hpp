@@ -15,18 +15,22 @@ protected:
     unsigned short int port_number;
     std::atomic<bool> running;
 
-public:
-    enum class SocketType {
+        bool createSocket(int socket_type = SOCK_STREAM);
+        void closeSocket();
+        bool setSocketTimeout(int seconds);
+
+    public:
+        enum class ExecutionType {
+            DEFERRED,
+            ASYNC
+        };
+        enum class SocketType {
             ACCEPTER,
             FORWARDER,
             SENDER
-    };
-    Socket(unsigned short int t_port_number);
-    virtual ~Socket();
-
-    bool createSocket(int socket_type = SOCK_STREAM);
-    bool setSocketTimeout(int seconds);
-    void closeSocket();
+        };
+        Socket(unsigned short int t_port_number);
+        virtual ~Socket();
 };
 }
 

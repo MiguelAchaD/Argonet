@@ -1,5 +1,7 @@
 #include "WebServer.hpp"
 #include "Logger.hpp"
+#include "Command.hpp"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>

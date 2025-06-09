@@ -12,10 +12,18 @@ proxyServer::Forwarder::~Forwarder() {
 }
 
 proxyServer::petitionPacket proxyServer::Forwarder::execute(proxyServer::petitionPacket t_packet) {
+    if (!t_packet.isResolved) {
+        t_packet.isForwarder = false;
+        return t_packet;
+    }
+  
     if (connect(t_packet.host, 80)) {
         sendRequest(t_packet);
-        t_packet.response = receiveResponse();
+        t_packet.response = FastString(receiveResponse());
+        t_packet.isForwarder = true;
         /*disconnect();*/
+    } else {
+        t_packet.isResolved = false;
     }
     return t_packet;
 }
@@ -31,7 +39,7 @@ std::string proxyServer::Forwarder::sendRequest(const proxyServer::petitionPacke
     return std::to_string(bytes_sent);
 }
 
-bool proxyServer::Forwarder::connect(const std::string& host, int port) {
+bool proxyServer::Forwarder::connect(const FastString& host, int port) {
     struct addrinfo hints, *servinfo;
     
     memset(&hints, 0, sizeof(hints));

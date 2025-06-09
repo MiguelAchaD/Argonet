@@ -57,8 +57,7 @@ bool proxyServer::Socket::createSocket(int socket_type) {
 void proxyServer::Socket::closeSocket() {
     if (socket_fd != -1) {
         close(socket_fd);
-        Logger::log("Socket closed: " + std::to_string(socket_fd), 
-                    Logger::LogType::SUCCESS);
+        
         socket_fd = -1;
         running = false;
     }

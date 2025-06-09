@@ -1,101 +1,112 @@
 #include "Server.hpp"
 #include "Logger.hpp"
-
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include "Blacklist.hpp"
+#include <stdexcept>
 #include <thread>
 #include <chrono>
-#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
-proxyServer::Server::Server(unsigned short int t_port_number) 
-    : Socket(t_port_number),
-      m_ip_address(),
-      m_is_running(false)
-{
-    proxyServer::Logger::log("Initialising Server on port \"" + std::to_string(port_number) + "\"...", proxyServer::Logger::LogType::LOG);
-    initialize(port_number);
-    proxyServer::Logger::log("Server initialized with IP: " + m_ip_address + " on port " + std::to_string(port_number), 
-                proxyServer::Logger::LogType::SUCCESS);
+namespace proxyServer {
+
+Server::Server(unsigned short int port) : Socket(port) {
+    try {
+        // Initialize blacklist
+        Blacklist::getInstance().loadFromConfig("configuration.json");
+        
+    } catch (const std::exception& e) {
+        Logger::log("Server initialization error: " + std::string(e.what()), 
+                   Logger::LogType::ERROR);
+        throw;
+    }
 }
 
-proxyServer::Server::~Server() {
+Server::~Server() {
     stop();
 }
 
-bool proxyServer::Server::initialize(unsigned short int port_number) {
-    //proxyServer::Command::openDatabase(proxyServer::Server::db);
-
-    m_ip_address = proxyServer::Command::getActiveInterfaceIP();
-    if (m_ip_address.empty()) {
-        proxyServer::Logger::log("Failed to get active interface IP", proxyServer::Logger::LogType::ERROR);
-        return false;
+void Server::start() {
+    if (running) {
+        Logger::log("Server is already running", Logger::LogType::WARNING);
+        return;
     }
 
-    port_number = port_number;
-
-    if (!createSocket()) {
-        proxyServer::Logger::log("Failed to create server socket", proxyServer::Logger::LogType::ERROR);
-        return false;
-    }
-
-    int opt = 1;
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
-        proxyServer::Logger::log("Failed to set socket options", proxyServer::Logger::LogType::ERROR);
-        return false;
-    }
-
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(port_number);
-
-    if (bind(socket_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        proxyServer::Logger::log("Bind failed: " + std::string(strerror(errno)), proxyServer::Logger::LogType::ERROR);
-        return false;
-    }
-
-    if (listen(socket_fd, 3) < 0) {
-        proxyServer::Logger::log("Listen failed: " + std::string(strerror(errno)), proxyServer::Logger::LogType::ERROR);
-        return false;
-    }
-
-    fcntl(socket_fd, F_SETFL, O_NONBLOCK);
-
-    return true;
-}
-
-void proxyServer::Server::start() {
-    if (m_is_running) return;
-
-    m_is_running = true;
-    proxyServer::Logger::log("Starting server...", proxyServer::Logger::LogType::LOG);
-
-    while (m_is_running) {
-        handler.checkFutures();
-
-        struct sockaddr_in client_address;
-        socklen_t client_len = sizeof(client_address);
-
-        int client_socket = accept(socket_fd, (struct sockaddr *)&client_address, &client_len);
-        
-        if (client_socket > 0) {
-            proxyServer::Logger::log("New client connected! Delegating to handler", proxyServer::Logger::LogType::SUCCESS);
-            handler.accepterInvoke(client_socket);
+    try {
+        // Create socket
+        if (!createSocket()) {
+            throw std::runtime_error("Failed to create socket");
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // Set socket options
+        int opt = 1;
+        if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            throw std::runtime_error("Failed to set socket options");
+        }
+
+        // Bind socket
+        struct sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port_number);
+
+        if (bind(socket_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+            throw std::runtime_error("Failed to bind socket");
+        }
+
+        // Listen for connections
+        if (listen(socket_fd, SOMAXCONN) < 0) {
+            throw std::runtime_error("Failed to listen on socket");
+        }
+
+        running = true;
+        Logger::log("Server started successfully");
+
+        // Start accepting connections
+        while (running) {
+            try {
+                struct sockaddr_in client_addr;
+                socklen_t client_len = sizeof(client_addr);
+                int client_socket = accept(socket_fd, (struct sockaddr*)&client_addr, &client_len);
+                
+                if (client_socket < 0) {
+                    if (running) {
+                        Logger::log("Error accepting connection", Logger::LogType::ERROR);
+                    }
+                    continue;
+                }
+
+                // Create new packet for the connection
+                petitionPacket packet;
+                packet.client_socket = client_socket;
+
+                // Add to work queue
+                handler.handlePacket(std::move(packet));
+            } catch (const std::exception& e) {
+                if (running) {
+                    Logger::log("Error in connection handling: " + std::string(e.what()), Logger::LogType::ERROR);
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        Logger::log("Server error: " + std::string(e.what()), Logger::LogType::ERROR);
+        stop();
+        throw;
     }
 }
 
-void proxyServer::Server::stop() {
-    m_is_running = false;
+void Server::stop() {
+    if (!running) {
+        return;
+    }
+
+    running = false;
     closeSocket();
+    Logger::log("Server stopped", Logger::LogType::LOG);
 }
 
-bool proxyServer::Server::isRunning() const {
-    return m_is_running;
+bool Server::isRunning() const {
+    return running;
 }
 
-std::string proxyServer::Server::getIPAddress() const {
-    return m_ip_address;
-}
+} // namespace proxyServer
