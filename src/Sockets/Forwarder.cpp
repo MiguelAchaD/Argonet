@@ -209,7 +209,8 @@ std::string proxyServer::Forwarder::removeHeader(const std::string& headers, con
         
         size_t line_end = result.find("\r\n", pos);
         if (line_end != std::string::npos) {
-            result.erase(line_start, line_end - line_start + 2);
+            line_end += 2;
+            result.erase(line_start, line_end - line_start);
             pos = line_start;
         } else {
             break;

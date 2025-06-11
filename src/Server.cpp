@@ -15,10 +15,7 @@ namespace proxyServer {
 Server* Server::instance = nullptr;
 
 Server::Server(unsigned short int port) : Socket(port), m_start_time(std::chrono::steady_clock::now()) {
-    try {
-        // Initialize blacklist
-        Blacklist::getInstance().loadFromConfig("configuration.json");
-        
+    try {        
         // Initialize API keys
         APIKeyManager::getInstance().loadFromConfig("configuration.json");
         

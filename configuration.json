@@ -25,8 +25,15 @@
     },
     "virustotal": {
         "api_keys": [
-            "your-api-key-1",
-            "your-api-key-2"
+            "03543822986501cefe179ca7c7b3b305471015c4c3529d0e5192c000c0ab8493",
+            "03543822986501cefe179ca7c7b3b305471015c4c3529d0e5192c000c0ab8493",
+            "865ac768f879bc2eb43d8c7277119928bea3c5b3a631b66fd503934efa98867a",
+            "b52f6f4bc3c131f779037d31e02b88e8c5feedbbdd46b7921b66151fa81fb30f",
+            "7a3a89aaee4c9012a9d51a948ebc17c68d311f23cd778d78c600399b15b14bad",
+            "4058b9f2606790bf6467edc3d0452070e9e150e99dec5883cd109615a1e773df",
+            "d733b622dc552b265402d6e5e406467f7f78fdcf518447886c6a2370ed4d5a8b",
+            "22c280519b48c647008b77dd7a4cddef669a8c67f3c469864e4fb58e1772fdee",
+            "91eca86cdb14f369544f96e7e6caddb060432522414ecbb65d0cb3a42cd67a3b"
         ],
         "enabled": true
     }
