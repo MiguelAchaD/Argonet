@@ -29,10 +29,6 @@
 
 ## 💿 Installation
 
-### 📦 Pre-built
-
-> Get the latest release from the [Releases](https://github.com/MiguelAchaD/Argonet/releases/latest) page.
-
 ### 🔧 Build from Source
 
 #### 1. Clone the repository
@@ -58,12 +54,6 @@ sudo apt-get install make g++ openssl libcurl4-openssl-dev nlohmann-json3-dev li
 
 ```bash
 make
-```
-
-#### 4. Install globally (optional)
-
-```bash
-sudo make install
 ```
 
 ---
