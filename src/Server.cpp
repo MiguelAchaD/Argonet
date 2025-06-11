@@ -16,7 +16,8 @@ Server* Server::instance = nullptr;
 
 Server::Server(unsigned short int port) : Socket(port), m_start_time(std::chrono::steady_clock::now()) {
     try {        
-        // Initialize API keys
+        // Initialize blacklist and API keys only once during server startup
+        Blacklist::getInstance().loadFromConfig("configuration.json");
         APIKeyManager::getInstance().loadFromConfig("configuration.json");
         
         // Set server reference in handler

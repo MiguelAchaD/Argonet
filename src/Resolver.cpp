@@ -13,12 +13,6 @@ Resolver::Resolver() {
     try {
         // Initialize with default API keys
         m_vt_api = std::make_unique<VirustotalAPI>("");
-        // Load API keys from configuration
-        APIKeyManager::getInstance().loadFromConfig("configuration.json");
-        for (const auto& key : APIKeyManager::getInstance().getKeys()) {
-            m_vt_api->addKey(key);
-        }
-        Logger::log("Resolver initialized successfully", Logger::LogType::SUCCESS);
     } catch (const std::exception& e) {
         Logger::log("Failed to initialize Resolver: " + std::string(e.what()), 
                    Logger::LogType::ERROR);
@@ -53,6 +47,12 @@ petitionPacket Resolver::execute(petitionPacket t_packet) {
     }
 
     try {
+        // Check if VirusTotal API is enabled
+        if (!APIKeyManager::getInstance().isEnabled()) {
+            t_packet.isResolved = true;
+            return t_packet;
+        }
+
         // Extract host from the URL
         std::string host = extractHost(t_packet.host.c_str());
         Logger::log("Checking host: " + host, Logger::LogType::LOG);
@@ -75,18 +75,46 @@ petitionPacket Resolver::execute(petitionPacket t_packet) {
         
         try {
             // Call the API
-            vt_api.callApi();
+            std::string response = vt_api.callApi();
             
-            if (vt_api.m_scan_malicious > 0 || vt_api.m_scan_suspicious > 0) {
-                // If malicious or suspicious, block access
-                t_packet.isResolved = false;
-                Logger::log("Access blocked: " + host + " is malicious/suspicious", 
-                           Logger::LogType::WARNING);
-            } else {
-                // If clean, allow access
-                t_packet.isResolved = true;
-                Logger::log("Access allowed: " + host + " is clean", 
-                           Logger::LogType::SUCCESS);
+            // Try to parse the response
+            try {
+                nlohmann::json json_response = nlohmann::json::parse(response);
+                
+                // Check if the response has the expected structure
+                if (!json_response.contains("data") || !json_response["data"].contains("attributes")) {
+                    throw std::runtime_error("Unexpected API response format");
+                }
+                
+                const auto& attributes = json_response["data"]["attributes"];
+                if (!attributes.contains("last_analysis_stats")) {
+                    throw std::runtime_error("Missing analysis stats in API response");
+                }
+                
+                const auto& stats = attributes["last_analysis_stats"];
+                if (!stats.contains("malicious") || !stats.contains("suspicious")) {
+                    throw std::runtime_error("Missing required stats in API response");
+                }
+                
+                if (stats["malicious"].get<int>() > 0 || stats["suspicious"].get<int>() > 0) {
+                    // If malicious or suspicious, block access
+                    t_packet.isResolved = false;
+                    Logger::log("Access blocked: " + host + " is malicious/suspicious", 
+                               Logger::LogType::WARNING);
+                } else {
+                    // If clean, allow access
+                    t_packet.isResolved = true;
+                    Logger::log("Access allowed: " + host + " is clean", 
+                               Logger::LogType::SUCCESS);
+                }
+            } catch (const nlohmann::json::parse_error& e) {
+                Logger::log("Failed to parse VirusTotal API response for " + host + 
+                           ": " + std::string(e.what()), Logger::LogType::ERROR);
+                t_packet.isResolved = true; // Allow access if response parsing fails
+            } catch (const std::exception& e) {
+                Logger::log("Invalid VirusTotal API response format for " + host + 
+                           ": " + std::string(e.what()), Logger::LogType::ERROR);
+                t_packet.isResolved = true; // Allow access if response format is invalid
             }
         } catch (const std::exception& e) {
             // If API call fails, log the error but allow access
