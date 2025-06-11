@@ -1,6 +1,8 @@
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "Blacklist.hpp"
+#include "Command.hpp"
+#include "APIs/APIKeyManager.hpp"
 #include <stdexcept>
 #include <thread>
 #include <chrono>
@@ -10,10 +12,18 @@
 
 namespace proxyServer {
 
-Server::Server(unsigned short int port) : Socket(port) {
+Server* Server::instance = nullptr;
+
+Server::Server(unsigned short int port) : Socket(port), m_start_time(std::chrono::steady_clock::now()) {
     try {
         // Initialize blacklist
         Blacklist::getInstance().loadFromConfig("configuration.json");
+        
+        // Initialize API keys
+        APIKeyManager::getInstance().loadFromConfig("configuration.json");
+        
+        // Set server reference in handler
+        handler.setServer(this);
         
     } catch (const std::exception& e) {
         Logger::log("Server initialization error: " + std::string(e.what()), 
@@ -24,6 +34,36 @@ Server::Server(unsigned short int port) : Socket(port) {
 
 Server::~Server() {
     stop();
+}
+
+void Server::updateConfiguration() {
+    try {
+        // Read and validate the new configuration
+        nlohmann::json config = Command::readConfigurationFile();
+        if (!Command::validateConfigurationFile(config)) {
+            throw std::runtime_error("Invalid configuration file");
+        }
+
+        // Update the configuration file
+        if (!Command::updateConfigurationFile(config)) {
+            throw std::runtime_error("Failed to update configuration file");
+        }
+
+        // Update blacklist
+        Blacklist::getInstance().loadFromConfig("configuration.json");
+
+        // Update API keys
+        APIKeyManager::getInstance().loadFromConfig("configuration.json");
+
+        // Update pool configurations
+        handler.updatePoolConfiguration(config);
+
+        Logger::log("Configuration updated successfully", Logger::LogType::SUCCESS);
+    } catch (const std::exception& e) {
+        Logger::log("Failed to update configuration: " + std::string(e.what()), 
+                   Logger::LogType::ERROR);
+        throw;
+    }
 }
 
 void Server::start() {
@@ -60,7 +100,8 @@ void Server::start() {
         }
 
         running = true;
-        Logger::log("Server started successfully");
+        m_start_time = std::chrono::steady_clock::now();
+        Logger::log("Server started " + Command::getActiveInterfaceIP() + ":" + std::to_string(port_number), Logger::LogType::SUCCESS);
 
         // Start accepting connections
         while (running) {
@@ -75,6 +116,8 @@ void Server::start() {
                     }
                     continue;
                 }
+
+                incrementActiveConnections();
 
                 // Create new packet for the connection
                 petitionPacket packet;

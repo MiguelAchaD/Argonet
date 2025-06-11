@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/Logo.svg" alt="Argonet Logo" width="200"/>
+  <img src="assets/static/Logo.svg" alt="Argonet Logo" width="200"/>
 </p>
 
 <h1 align="center">Argonet</h1>

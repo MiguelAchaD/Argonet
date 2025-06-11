@@ -49,7 +49,6 @@ std::string proxyServer::Command::getActiveInterfaceIP() {
 
             if (strcmp(addressBuffer, "127.0.0.1") != 0) {
                 std::string interfaceName = ifa->ifa_name;
-                proxyServer::Logger::log("Active interface: " + interfaceName + ", IP: " + addressBuffer);
 
                 return std::string(addressBuffer);
             }
@@ -117,46 +116,6 @@ void proxyServer::Command::formatDatabase(sqlite3& t_db) {
     }
 }
 
-void proxyServer::Command::setupConfigurationFile(int t_sign) {
-    std::string configPath = "configuration.json";
-    
-    if (t_sign == 0) {
-        // Create default configuration
-        nlohmann::json config = {
-            {"blacklist", {
-                {"patterns", {
-                    ".*\\.example\\.com$",
-                    ".*\\.blocked\\.org$"
-                }}
-            }},
-            {"server", {
-                {"port", 8081},
-                {"max_connections", 100},
-                {"timeout", 30}
-            }},
-            {"logging", {
-                {"level", "info"},
-                {"file", "proxy.log"}
-            }}
-        };
-
-        std::ofstream file(configPath);
-        if (file.is_open()) {
-            file << config.dump(4);
-            file.close();
-            Logger::log("Configuration file created successfully", Logger::LogType::SUCCESS);
-        } else {
-            Logger::log("Failed to create configuration file", Logger::LogType::ERROR);
-        }
-    } else {
-        // Remove configuration file
-        if (std::filesystem::exists(configPath)) {
-            std::filesystem::remove(configPath);
-            Logger::log("Configuration file removed", Logger::LogType::SUCCESS);
-        }
-    }
-}
-
 bool proxyServer::Command::applyConfiguration() {
     try {
         nlohmann::json config = readConfigurationFile();
@@ -189,31 +148,52 @@ bool proxyServer::Command::validateConfigurationFile(nlohmann::json& t_configura
     try {
         // Check required sections
         if (!t_configuration.contains("blacklist") || 
-            !t_configuration.contains("server") || 
-            !t_configuration.contains("logging")) {
+            !t_configuration.contains("pools") ||
+            !t_configuration.contains("virustotal")) {
             Logger::log("Missing required configuration sections", Logger::LogType::ERROR);
             return false;
         }
 
         // Validate blacklist section
-        if (!t_configuration["blacklist"].contains("patterns") || 
+        if (!t_configuration["blacklist"].contains("enabled") || 
+            !t_configuration["blacklist"].contains("patterns") || 
             !t_configuration["blacklist"]["patterns"].is_array()) {
             Logger::log("Invalid blacklist configuration", Logger::LogType::ERROR);
             return false;
         }
 
-        // Validate server section
-        if (!t_configuration["server"].contains("port") || 
-            !t_configuration["server"].contains("max_connections") || 
-            !t_configuration["server"].contains("timeout")) {
-            Logger::log("Invalid server configuration", Logger::LogType::ERROR);
+        // Validate pools section
+        const std::vector<std::string> required_pools = {"accepter", "forwarder", "resolver", "sender"};
+        for (const auto& pool : required_pools) {
+            if (!t_configuration["pools"].contains(pool)) {
+                Logger::log("Missing pool configuration: " + pool, Logger::LogType::ERROR);
+                return false;
+            }
+            
+            const auto& pool_config = t_configuration["pools"][pool];
+            if (!pool_config.contains("initial") || !pool_config.contains("max")) {
+                Logger::log("Invalid pool configuration for: " + pool, Logger::LogType::ERROR);
+                return false;
+            }
+
+            size_t initial = pool_config["initial"].get<size_t>();
+            size_t max = pool_config["max"].get<size_t>();
+            if (initial > max) {
+                Logger::log("Initial size cannot be greater than max size for pool: " + pool, Logger::LogType::ERROR);
+                return false;
+            }
+        }
+
+        // Validate VirusTotal section
+        const auto& vt_config = t_configuration["virustotal"];
+        if (!vt_config.contains("enabled") || 
+            !vt_config.contains("api_keys")) {
+            Logger::log("Invalid VirusTotal configuration", Logger::LogType::ERROR);
             return false;
         }
 
-        // Validate logging section
-        if (!t_configuration["logging"].contains("level") || 
-            !t_configuration["logging"].contains("file")) {
-            Logger::log("Invalid logging configuration", Logger::LogType::ERROR);
+        if (!vt_config["api_keys"].is_array() || vt_config["api_keys"].empty()) {
+            Logger::log("VirusTotal API keys must be a non-empty array", Logger::LogType::ERROR);
             return false;
         }
 
@@ -273,4 +253,65 @@ bool proxyServer::Command::saveApis(nlohmann::json& t_apis) {
 
     ::closeDatabase(db);
     return success;
+}
+
+bool proxyServer::Command::updateConfigurationFile(const nlohmann::json& new_config) {
+    try {
+        
+        // Validate the new configuration
+        nlohmann::json config_to_validate = new_config;
+        
+        if (!validateConfigurationFile(config_to_validate)) {
+            Logger::log("Invalid configuration format", Logger::LogType::ERROR);
+            return false;
+        }
+
+        // Create a backup of the current configuration
+        std::string configPath = "configuration.json";
+        std::string backupPath = "configuration.json.bak";
+        
+        if (std::filesystem::exists(configPath)) {
+            std::filesystem::copy_file(configPath, backupPath, std::filesystem::copy_options::overwrite_existing);
+        }
+
+        // Write the new configuration
+        std::ofstream file(configPath);
+        if (!file.is_open()) {
+            Logger::log("Failed to open configuration file for writing", Logger::LogType::ERROR);
+            return false;
+        }
+
+        file << new_config.dump(4);
+        file.close();
+
+        // Verify the new configuration can be read back
+        try {
+            nlohmann::json verify_config = readConfigurationFile();
+            if (!validateConfigurationFile(verify_config)) {
+                Logger::log("Configuration verification failed, restoring from backup", Logger::LogType::ERROR);
+                // If verification fails, restore from backup
+                if (std::filesystem::exists(backupPath)) {
+                    std::filesystem::copy_file(backupPath, configPath, std::filesystem::copy_options::overwrite_existing);
+                }
+                return false;
+            }
+        } catch (const std::exception& e) {
+            Logger::log("Configuration verification failed: " + std::string(e.what()), Logger::LogType::ERROR);
+            // If reading fails, restore from backup
+            if (std::filesystem::exists(backupPath)) {
+                std::filesystem::copy_file(backupPath, configPath, std::filesystem::copy_options::overwrite_existing);
+            }
+            return false;
+        }
+
+        // Remove backup if everything is successful
+        if (std::filesystem::exists(backupPath)) {
+            std::filesystem::remove(backupPath);
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        Logger::log("Failed to update configuration: " + std::string(e.what()), Logger::LogType::ERROR);
+        return false;
+    }
 }

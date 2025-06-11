@@ -1,17 +1,21 @@
 #pragma once
 
-#include "Api.hpp"
 #include "Packet.hpp"
-
-#include <vector>
+#include "APIs/VirustotalAPI.hpp"
+#include <memory>
 
 namespace proxyServer {
+
 class Resolver {
-    private:
-        std::vector<proxyServer::Api> m_apis;
-    public:
-        proxyServer::petitionPacket execute(proxyServer::petitionPacket t_packet);
-        Resolver();
-        ~Resolver();
+private:
+    std::unique_ptr<VirustotalAPI> m_vt_api;
+    std::string extractHost(const std::string& url);
+
+public:
+    Resolver();
+    ~Resolver();
+
+    petitionPacket execute(petitionPacket t_packet);
 };
+
 }

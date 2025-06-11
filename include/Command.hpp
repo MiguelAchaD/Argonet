@@ -17,10 +17,10 @@ namespace proxyServer {
         static void formatDatabase(sqlite3 &t_db); // Use carefully!
 
         // Configuration methods
-        static void setupConfigurationFile(int t_sign);
         static bool applyConfiguration();
         static nlohmann::json readConfigurationFile();
         static bool validateConfigurationFile(nlohmann::json& t_configuration);
+        static bool updateConfigurationFile(const nlohmann::json& new_config);
     
         // Auxiliary methods
         static std::string getCurrentTimestamp();

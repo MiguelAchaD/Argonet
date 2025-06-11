@@ -1,5 +1,5 @@
 CXX = g++
-LIBS = -lcurl -lsqlite3
+LIBS = -lcurl -lsqlite3 -lz
 CXXFLAGS = -Wall -Wextra -Iinclude -Iinclude/Sockets -Iinclude/APIs -Iinclude/Web -std=c++17
 SRC_DIR = src
 BUILD_DIR = build

@@ -24,10 +24,10 @@
         }
     },
     "virustotal": {
+        "enabled": true,
         "api_keys": [
             "your-api-key-1",
             "your-api-key-2"
-        ],
-        "enabled": true
+        ]
     }
 }

@@ -1,0 +1,21 @@
+2025-06-10 19:17:56 | Host: 10.96.0.254 | Status: offline | Skipped request
+2025-06-10 19:17:56 | Host: mysolem.com | Status: offline | Skipped request
+2025-06-10 19:17:58 | Host: www.samsung.com | Status: online | Method: GET | URL: http://www.samsung.com/
+2025-06-10 19:17:58 | Host: play.googleapis.com | Status: online | Method: GET | URL: http://play.googleapis.com/generate_204
+2025-06-10 19:17:58 | Host: www.tizen.org | Status: online | Method: GET | URL: http://www.tizen.org/
+2025-06-10 19:17:58 | Host: cadena100-cope.flumotion.com | Status: online | Method: GET | URL: http://cadena100-cope.flumotion.com/l_289855_3224928042_537488.aac
+2025-06-10 19:17:59 | Host: ocsp.apple.com | Status: offline | Skipped request
+2025-06-10 19:17:59 | Host: firetvcaptiveportal.com | Status: offline | Skipped request
+2025-06-10 19:18:04 | Host: www.ietf.org | Status: online | Method: GET | URL: http://www.ietf.org/
+2025-06-10 19:18:04 | Host: conn-service-eu-03.allawnos.com | Status: online | Method: GET | URL: http://conn-service-eu-03.allawnos.com/generate204
+2025-06-10 19:18:04 | Host: touch.kaspersky.com | Status: online | Method: GET | URL: http://touch.kaspersky.com/?
+2025-06-10 19:18:05 | Host: ocsp.apple.com | Status: online | Method: GET | URL: http://ocsp.apple.com/ocsp03-apsecca1g1/MFYwVKADAgEAME0wSzBJMAkGBSsOAwIaBQAEFOAq19CSqDTCXwRX4q97wwhqc5CLBBRsl4JFnsxvFkf2uBPzc1Mi%2BnkRJgIQQed1fqh0EuMpjEMJkyrNPg%3D%3D
+2025-06-10 19:18:08 | Host: mysolem.com | Status: offline | Skipped request
+2025-06-10 19:18:10 | Host: connectivitycheck.gstatic.com | Status: online | Method: GET | URL: http://connectivitycheck.gstatic.com/generate_204
+2025-06-10 19:18:10 | Host: connectivitycheck.android.com | Status: online | Method: GET | URL: http://connectivitycheck.android.com/generate_204
+2025-06-10 19:18:10 | Host: connectivitycheck.cbg-app.huawei.com | Status: online | Method: GET | URL: http://connectivitycheck.cbg-app.huawei.com/generate_204
+2025-06-10 19:18:10 | Host: sgshort.wechat.com | Status: online | Method: POST | URL: http://sgshort.wechat.com/mmtls/16396652
+2025-06-10 19:18:13 | Host: mysolem.com | Status: offline | Skipped request
+2025-06-10 19:18:13 | Host: mysolem.com | Status: offline | Skipped request
+2025-06-10 19:18:13 | Host: mysolem.com | Status: offline | Skipped request
+2025-06-10 19:18:13 | Host: mysolem.com | Status: offline | Skipped request
