@@ -55,6 +55,14 @@ sudo apt-get install make g++ openssl libcurl4-openssl-dev nlohmann-json3-dev li
 ```bash
 make
 ```
+#### 3. Run
+
+```bash
+./bin/argonet -v
+```
+#### 3. Configure
+
+Go to a browser, and type the IP address of the server and its port (e.g.: 192.168.1.172:8081). Login with the default credentials (admin, 1234), and configure the server!
 
 ---
 
