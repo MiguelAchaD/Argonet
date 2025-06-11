@@ -37,7 +37,7 @@ private:
     std::atomic<size_t> m_available_count{0};
     std::atomic<size_t> m_high_water_mark{0};
     const size_t m_initial_size;
-    const size_t m_max_size;
+    std::atomic<size_t> m_max_size;
     std::function<void()> m_on_object_created;
 
     unsigned short int pickPort() {
@@ -123,6 +123,41 @@ public:
     size_t getTotalCount() const { return m_total_count; }
     size_t getAvailableCount() const { return m_available_count; }
     size_t getHighWaterMark() const { return m_high_water_mark; }
+
+    void updateLimits(size_t initial_size, size_t max_size) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_max_size = max_size;
+        
+        // Adjust pool size to match initial_size
+        while (m_objects.size() < initial_size) {
+            m_objects.emplace_back();
+            if constexpr (RequiresPort) {
+                m_objects.back().object = std::make_unique<T>(pickPort());
+            } else {
+                m_objects.back().object = std::make_unique<T>();
+            }
+            m_objects.back().in_use = false;
+            m_total_count++;
+            m_available_count++;
+        }
+        while (m_objects.size() > initial_size) {
+            m_objects.pop_back();
+            m_total_count--;
+            m_available_count--;
+        }
+        
+        if (m_on_object_created) {
+            m_on_object_created();
+        }
+    }
+
+    size_t getMinSize() const {
+        return m_initial_size;
+    }
+
+    size_t getMaxSize() const {
+        return m_max_size;
+    }
 };
 
 } // namespace proxyServer

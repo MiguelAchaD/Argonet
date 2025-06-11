@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <functional>
 #include <nlohmann/json.hpp>
-
+#include "Server.hpp"
 
 namespace proxyServer {
 namespace web {
@@ -20,6 +20,7 @@ public:
     void start();
     void stop();
     bool isRunning() const;
+    void setServer(Server* server) { m_server = server; }
 
 private:
     void setupRoutes();
@@ -34,6 +35,7 @@ private:
     std::string handleRegister(const nlohmann::json& req);
     std::string handleGetConfig(const nlohmann::json& req);
     std::string handleUpdateConfig(const nlohmann::json& req);
+    std::string handleResetConfig(const nlohmann::json& req);
     std::string handleGetStatus(const nlohmann::json& req);
 
     unsigned short m_port;
@@ -43,6 +45,7 @@ private:
     std::mutex m_mutex;
     std::unordered_map<std::string, std::string> m_sessions;
     std::unordered_map<std::string, std::function<std::string(const nlohmann::json&)>> m_routes;
+    Server* m_server{nullptr};
 };
 
 } // namespace web

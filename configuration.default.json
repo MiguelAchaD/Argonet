@@ -2,32 +2,32 @@
     "blacklist": {
         "enabled": true,
         "patterns": [
-            ".*\\.example\\.com$"
+            ".*\\.google\\.com$"
         ]
     },
     "pools": {
         "accepter": {
-            "initial": 1,
-            "max": 100
+            "initial": 2,
+            "max": 4
         },
         "forwarder": {
-            "initial": 1,
-            "max": 100
+            "initial": 2,
+            "max": 4
         },
         "resolver": {
-            "initial": 1,
-            "max": 100
+            "initial": 2,
+            "max": 4
         },
         "sender": {
-            "initial": 1,
-            "max": 100
+            "initial": 2,
+            "max": 4
         }
     },
     "virustotal": {
+        "enabled": true,
         "api_keys": [
             "your-api-key-1",
             "your-api-key-2"
-        ],
-        "enabled": true
+        ]
     }
 }

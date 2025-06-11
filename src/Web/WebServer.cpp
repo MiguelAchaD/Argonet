@@ -54,7 +54,7 @@ void WebServer::start() {
         return;
     }
 
-    Logger::log("Web server started on port " + std::to_string(m_port), Logger::LogType::LOG);
+    Logger::log("Web server started http://" + Command::getActiveInterfaceIP() + ":" + std::to_string(m_port), Logger::LogType::SUCCESS);
     m_running = true;
     m_serverThread = std::thread([this]() {
         while (m_running) {
@@ -89,6 +89,7 @@ void WebServer::setupRoutes() {
     m_routes["/api/register"] = [this](const nlohmann::json& req) { return handleRegister(req); };
     m_routes["/api/config"] = [this](const nlohmann::json& req) { return handleGetConfig(req); };
     m_routes["/api/config/update"] = [this](const nlohmann::json& req) { return handleUpdateConfig(req); };
+    m_routes["/api/config/reset"] = [this](const nlohmann::json& req) { return handleResetConfig(req); };
     m_routes["/api/status"] = [this](const nlohmann::json& req) { return handleGetStatus(req); };
 }
 
@@ -134,6 +135,7 @@ std::string WebServer::getContentType(const std::string& path) {
     if (path.length() >= 4 && path.substr(path.length() - 4) == ".css") return "text/css";
     if (path.length() >= 3 && path.substr(path.length() - 3) == ".js") return "application/javascript";
     if (path.length() >= 5 && path.substr(path.length() - 5) == ".json") return "application/json";
+    if (path.length() >= 4 && path.substr(path.length() - 4) == ".svg") return "image/svg+xml";
     return "text/plain";
 }
 
@@ -148,8 +150,6 @@ void WebServer::handleRequest(int clientSocket) {
     std::istringstream requestStream(request);
     std::string method, path, version;
     requestStream >> method >> path >> version;
-
-    Logger::log("Received request: " + method + " " + path, Logger::LogType::LOG);
 
     // Handle API requests first
     if (path.length() >= 5 && path.substr(0, 5) == "/api/") {
@@ -301,8 +301,9 @@ std::string WebServer::handleGetConfig(const nlohmann::json& request) {
     return config.dump();
 }
 
-std::string WebServer::handleUpdateConfig(const nlohmann::json& request) {
+std::string WebServer::handleUpdateConfig(const nlohmann::json& request) {    
     if (!validateToken(request["token"].get<std::string>())) {
+        Logger::log("Invalid token in update config request", Logger::LogType::ERROR);
         nlohmann::json response = {
             {"status", "error"},
             {"message", "Invalid token"}
@@ -310,12 +311,124 @@ std::string WebServer::handleUpdateConfig(const nlohmann::json& request) {
         return response.dump();
     }
     
-    // TODO: Implement configuration update
-    nlohmann::json response = {
-        {"status", "success"},
-        {"message", "Configuration updated successfully"}
-    };
-    return response.dump();
+    try {
+        // Get the new configuration from the request
+        nlohmann::json new_config = request["config"];
+        Logger::log("New configuration: " + new_config.dump(), Logger::LogType::LOG);
+        
+        // Validate VirusTotal configuration
+        if (new_config.contains("virustotal")) {
+            const auto& vt_config = new_config["virustotal"];
+            if (vt_config.contains("api_keys") && vt_config["api_keys"].is_array()) {
+                // Mask API keys in logs
+                auto masked_config = new_config;
+                masked_config["virustotal"]["api_keys"] = std::vector<std::string>(vt_config["api_keys"].size(), "****");
+                Logger::log("Updating VirusTotal configuration: " + masked_config.dump(), Logger::LogType::LOG);
+            }
+        }
+        
+        // Update the configuration file
+        if (!Command::updateConfigurationFile(new_config)) {
+            Logger::log("Failed to update configuration file", Logger::LogType::ERROR);
+            nlohmann::json response = {
+                {"status", "error"},
+                {"message", "Failed to update configuration"}
+            };
+            return response.dump();
+        }
+
+        // Update the server configuration
+        if (m_server) {
+            m_server->updateConfiguration();
+        } else {
+            Logger::log("Server reference not set, configuration not applied", Logger::LogType::WARNING);
+        }
+        
+        // Return success response with the new configuration (with masked API keys)
+        if (new_config.contains("virustotal") && new_config["virustotal"].contains("api_keys")) {
+            new_config["virustotal"]["api_keys"] = std::vector<std::string>(
+                new_config["virustotal"]["api_keys"].size(), 
+                "****"
+            );
+        }
+        
+        nlohmann::json response = {
+            {"status", "success"},
+            {"message", "Configuration updated successfully"},
+            {"config", new_config}
+        };
+        return response.dump();
+    } catch (const std::exception& e) {
+        Logger::log("Exception in update config: " + std::string(e.what()), Logger::LogType::ERROR);
+        nlohmann::json response = {
+            {"status", "error"},
+            {"message", "Failed to update configuration: " + std::string(e.what())}
+        };
+        return response.dump();
+    }
+}
+
+std::string WebServer::handleResetConfig(const nlohmann::json& request) {
+    Logger::log("Received reset config request", Logger::LogType::LOG);
+    
+    if (!validateToken(request["token"].get<std::string>())) {
+        Logger::log("Invalid token in reset config request", Logger::LogType::ERROR);
+        nlohmann::json response = {
+            {"status", "error"},
+            {"message", "Invalid token"}
+        };
+        return response.dump();
+    }
+    
+    try {
+        // Read the default configuration
+        std::ifstream defaultFile("configuration.default.json");
+        if (!defaultFile.is_open()) {
+            Logger::log("Failed to open default configuration file", Logger::LogType::ERROR);
+            nlohmann::json response = {
+                {"status", "error"},
+                {"message", "Default configuration file not found"}
+            };
+            return response.dump();
+        }
+
+        nlohmann::json defaultConfig;
+        defaultFile >> defaultConfig;
+        defaultFile.close();
+
+        // Update the configuration file with default values
+        if (!Command::updateConfigurationFile(defaultConfig)) {
+            Logger::log("Failed to reset configuration file", Logger::LogType::ERROR);
+            nlohmann::json response = {
+                {"status", "error"},
+                {"message", "Failed to reset configuration"}
+            };
+            return response.dump();
+        }
+
+        // Update the server configuration
+        if (m_server) {
+            m_server->updateConfiguration();
+        } else {
+            Logger::log("Server reference not set, configuration not applied", Logger::LogType::WARNING);
+        }
+        
+        // Return success response with the new configuration
+        nlohmann::json response = {
+            {"status", "success"},
+            {"message", "Configuration reset successfully"},
+            {"config", defaultConfig}
+        };
+        Logger::log("Configuration reset successfully", Logger::LogType::SUCCESS);
+        return response.dump();
+    } catch (const std::exception& e) {
+        Logger::log("Exception in reset config: " + std::string(e.what()), Logger::LogType::ERROR);
+        nlohmann::json response = {
+            {"status", "error"},
+            {"message", "Failed to reset configuration: " + std::string(e.what())}
+        };
+        return response.dump();
+    }
 }
 
 std::string WebServer::handleGetStatus(const nlohmann::json& request) {
@@ -327,12 +440,31 @@ std::string WebServer::handleGetStatus(const nlohmann::json& request) {
         return response.dump();
     }
     
-    nlohmann::json status = {
-        {"status", "running"},
-        {"uptime", "0"}, // TODO: Implement uptime tracking
-        {"active_connections", 0} // TODO: Implement connection tracking
-    };
-    return status.dump();
+    try {
+        if (!m_server) {
+            throw std::runtime_error("Server reference not set");
+        }
+
+        nlohmann::json status = {
+            {"status", m_server->isRunning() ? "running" : "stopped"},
+            {"uptime", m_server->getUptime()},
+            {"active_connections", m_server->getActiveConnections()},
+            {"workers", {
+                {"accepter", m_server->getWorkerCount("accepter")},
+                {"resolver", m_server->getWorkerCount("resolver")},
+                {"forwarder", m_server->getWorkerCount("forwarder")},
+                {"sender", m_server->getWorkerCount("sender")}
+            }}
+        };
+        return status.dump();
+    } catch (const std::exception& e) {
+        Logger::log("Error getting status: " + std::string(e.what()), Logger::LogType::ERROR);
+        nlohmann::json response = {
+            {"status", "error"},
+            {"message", "Failed to get status: " + std::string(e.what())}
+        };
+        return response.dump();
+    }
 }
 
 } // namespace web

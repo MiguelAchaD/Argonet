@@ -32,6 +32,7 @@ OUTPUT_FILE="response_codes.log"
 VERBOSE=false
 MAX_PARALLEL_JOBS=10
 PING_TIMEOUT=3
+PROXY=""
 
 ###################################################
 ## PROGRAM ARGUMENTS ##############################
@@ -43,6 +44,7 @@ print_help() {
     echo "  --output FILE     Specify output log file (default: response_codes.log)"
     echo "  --parallel N      Number of parallel jobs (default: 10)"
     echo "  --ping-timeout N  Ping timeout in seconds (default: 3)"
+    echo "  --proxy URL       Proxy URL to use for requests (e.g., http://localhost:8080)"
     echo "  --verbose         Enable verbose output"
     echo "  --help            Display this help message"
     exit 0
@@ -64,6 +66,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --ping-timeout)
             PING_TIMEOUT="$2"
+            shift 2
+            ;;
+        --proxy)
+            PROXY="$2"
             shift 2
             ;;
         --verbose)
@@ -111,7 +117,13 @@ call_url() {
         
         echo "$(date '+%Y-%m-%d %H:%M:%S') | Host: $host | Status: $host_status | Skipped request" >> "$OUTPUT_FILE"
     else
-        local http_code=$(curl -s -D- -o /dev/null -w "%{http_code}" -X "$method" "$url" -H "Content-Type: */*")
+        local curl_cmd="curl -s -D- -o /dev/null -w \"%{http_code}\" -X \"$method\" \"$url\" -H \"Content-Type: */*\""
+        
+        if [ ! -z "$PROXY" ]; then
+            curl_cmd="$curl_cmd -x \"$PROXY\""
+        fi
+        
+        local http_code=$(eval "$curl_cmd")
         
         if [[ "$http_code" =~ ^2[0-9]{2}$ ]]; then
             flock -x "$stats_file" bash -c "echo 'hit' >> \"$stats_file\""
@@ -119,7 +131,7 @@ call_url() {
             flock -x "$stats_file" bash -c "echo 'miss' >> \"$stats_file\""
         fi
         
-        echo "$(date '+%Y-%m-%d %H:%M:%S') | Host: $host | Status: $host_status | Method: $method | URL: $url | HTTP Code: $http_code" >> "$OUTPUT_FILE"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') | Host: $host | Status: $host_status | Method: $method | URL: $url" >> "$OUTPUT_FILE"
     fi
 }
 
